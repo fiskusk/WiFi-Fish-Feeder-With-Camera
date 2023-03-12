@@ -14,10 +14,6 @@
 
 
 // --- Start header changes for Fish Feeder ---
-unsigned long previousMillis = 0;   // ms
-unsigned long feedinterval = 24UL*60UL*60UL*1000UL;
-unsigned int feedingtime = 2;       // s
-bool feedingintervalenabled = true;
 #define feederPin 12
 
 void runFeeder();
@@ -31,6 +27,7 @@ void feedingAnalogWrite();
 #include "camera_index.h"
 #include "Arduino.h"
 #include "time.h"
+#include "globals.h"
 
 #include "fb_gfx.h"
 #include "fd_forward.h"
@@ -545,28 +542,34 @@ static esp_err_t cmd_handler(httpd_req_t *req)
         }
     }
     else if(!strcmp(variable, "fishfeeder")) {      
-      runFeeder();   
+        if (automaticFeedingLight)
+            digitalWrite(4 , HIGH);
+        runFeeder();
+        if (automaticFeedingLight && lightEnabled == false)
+            digitalWrite(4 , LOW);
+      
     }
     else if(!strcmp(variable, "feedingintervalenabled")) {
-      feedingintervalenabled = val == 1;      
+        feedingintervalenabled = val == 1;      
     }
     else if(!strcmp(variable, "lightenabled")) {
-      if (val == 1) 
-        digitalWrite(4 , HIGH);
-      else if (val == 0) {
-        digitalWrite(4 , LOW);      
-      }
+        command = CommandType::SetLight;
     }
     else if(!strcmp(variable, "feedinginterval")) {
-      Serial.print("Feeding interval changed to: ");
-      Serial.println(val);
-      feedinterval = val*60UL*60UL*1000UL;
-      previousMillis = 0;
+        Serial.print("Feeding interval changed to: ");
+        Serial.println(val);
+        feedinterval = val*60UL*60UL*1000UL;
+        previousMillis = 0;
     }
     else if(!strcmp(variable, "feedingtime")) {
-      Serial.print("Feeding time (seconds) changed to: ");
-      Serial.println(val);
-      feedingtime = val;
+        Serial.print("Feeding time (seconds) changed to: ");
+        Serial.println(val);
+        feedingtime = val;
+    } else if(!strcmp(variable, "autolight")) {
+        command = CommandType::SetAutomaticLight;
+        Serial.print("Automatic light when feeding changed to: ");
+        val ? Serial.println("ON") : Serial.println("OFF");
+        automaticFeedingLight = val;
     } else {
         res = -1;
     }
@@ -614,7 +617,12 @@ static esp_err_t status_handler(httpd_req_t *req)
     p+=sprintf(p, "\"colorbar\":%u,", s->status.colorbar);
     p+=sprintf(p, "\"face_detect\":%u,", detection_enabled);
     p+=sprintf(p, "\"face_enroll\":%u,", is_enrolling);
-    p+=sprintf(p, "\"face_recognize\":%u", recognition_enabled);
+    p+=sprintf(p, "\"face_recognize\":%u,", recognition_enabled);
+    p+=sprintf(p, "\"lightenabled\":%u,", lightEnabled);
+    p+=sprintf(p, "\"autolight\":%u,", automaticFeedingLight);
+    p+=sprintf(p, "\"feedingintervalenabled\":%u,", feedingintervalenabled);
+    p+=sprintf(p, "\"feedinginterval\":%u,", feedinterval);
+    p+=sprintf(p, "\"feedingtime\":%u", feedingtime);
     *p++ = '}';
     *p++ = 0;
     httpd_resp_set_type(req, "application/json");
@@ -767,9 +775,20 @@ void runFeeder()
     Serial.print(feedingtime);
     Serial.println(" seconds");
 
-  feedingAnalogWrite(4, 90);
-  delay(feedingtime * 1000);  
-  feedingAnalogWrite(4, 0);  
+    for (uint8_t sweep = 0; sweep < 180; sweep++)
+    {
+        feedingAnalogWrite(4, sweep);
+        delay((feedingtime * 1000) / 180);
+        Serial.print("Sweep ");
+        Serial.print(sweep);
+        Serial.println(" now");
+    }
+
+    /*
+    feedingAnalogWrite(4, 90);
+    delay(feedingtime * 1000);  
+    feedingAnalogWrite(4, 0);  
+    */
 
     Serial.println("Feeding the fish finished");
 }

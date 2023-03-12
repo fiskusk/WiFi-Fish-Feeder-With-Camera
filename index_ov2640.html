@@ -342,7 +342,9 @@
             }
 
             .image-container {
-                position: relative;
+                position: absolute;
+                right: 0px;
+                top: 0px;
                 min-width: 160px
             }
 
@@ -599,21 +601,29 @@
                             </div>
                             
                             <div class="input-group" id="lightenabled-group">
-                                <label for="lightenabled">Light enabled:</label>
+                                <label for="lightenabled">Light Enabled:</label>
                                 <div class="switch">
                                     <input id="lightenabled" type="checkbox" class="default-action">
                                     <label class="slider" for="lightenabled"></label>
                                 </div>
                             </div>  
 
+                            <div class="input-group" id="autolight-group">
+                                <label for="autolight" id="autolightlabel">Auto Feeding Light:</label>
+                                <div class="switch">
+                                    <input id="autolight" type="checkbox" class="default-action">
+                                    <label class="slider" for="autolight"></label>
+                                </div>
+                            </div>
+                            
                             <div class="input-group" id="feedingintervalenabled-group">
-                                <label for="feedingintervalenabled">Feed interval enabled:</label>
+                                <label for="feedingintervalenabled">Feed Interval Enabled:</label>
                                 <div class="switch">
                                     <input id="feedingintervalenabled" type="checkbox" class="default-action">
                                     <label class="slider" for="feedingintervalenabled"></label>
                                 </div>
                             </div>  
-                            
+
                             <div class="input-group" id="feedinginterval-group">
                                 <label for="feedinginterval" id="feedingintervallabel">Feed Interval: ? hours:</label>
                                 <div class="range-min">6</div>
@@ -622,7 +632,7 @@
                             </div>
 
                             <div class="input-group" id="feedingtime-group">
-                                <label for="feedingtime" id="feedingtimelabel">Feeding time (sec):</label>
+                                <label for="feedingtime" id="feedingtimelabel">Feeding Time (sec):</label>
                                 <div class="range-min">2</div>
                                 <input type="range" id="feedingtime" min="2" max="30" value="2" step="1" class="default-action">
                                 <div class="range-max">30</div>

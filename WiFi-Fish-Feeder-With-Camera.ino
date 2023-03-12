@@ -3,6 +3,8 @@
 #include "LedController.h"
 #include "time.h"
 #include <esp_task_wdt.h>
+#include <Preferences.h>
+#include "globals.h"
 
 // Board: ESP32 Wrover
 // Partition scheme: Huge APP
@@ -13,16 +15,14 @@
 //#define CAMERA_MODEL_M5STACK_PSRAM
 //#define CAMERA_MODEL_M5STACK_WIDE
 #define CAMERA_MODEL_AI_THINKER
+#include "camera_pins.h"
 
 //3 seconds WDT
 #define WDT_TIMEOUT 3
 
-#include "camera_pins.h"
-
-const char* ssid = "*** your ssid here ***";
-const char* password = "*** your wi-fi password here ***";
-
 LedController led;
+Preferences defaults;
+
 
 void startCameraServer();
 void checkFeederTimer(unsigned long time);
@@ -30,6 +30,14 @@ void checkFeederTimer(unsigned long time);
 const char* ntpServer = "pool.ntp.org";
 const long  gmtOffset_sec = 0; // 1 * 60 * 60;
 const int   daylightOffset_sec = 0; // 3600;
+
+unsigned long previousMillis = 0;   // ms
+unsigned long feedinterval;     // s
+unsigned int feedingtime;       // s
+bool feedingintervalenabled;
+bool lightEnabled;
+bool automaticFeedingLight;
+command_t event = {None, 0};
 
 bool printLocalTime()
 {
@@ -43,6 +51,29 @@ bool printLocalTime()
     return true;
 }
 
+void checkCommand()
+{
+    switch (event) {
+        case SetLight:
+            if (val == 1) {
+                digitalWrite(4 , HIGH);
+                lightEnabled = true;
+            }
+            else if (val == 0) {
+                digitalWrite(4 , LOW);      
+                lightEnabled = false;
+            }
+            break;
+        case SetAutomaticLight:
+            break;
+        default:
+            command = None;
+            break;
+        command = None;
+
+    }
+}
+
 void setup() {
     // Initialize status LED
     led.init(LED1_NUM, true);
@@ -53,6 +84,17 @@ void setup() {
     Serial.begin(115200);
     Serial.setDebugOutput(true);
     Serial.println();
+
+    // Open Preferences with my-app namespace. Each application module, library, etc
+    // has to use a namespace name to prevent key name collisions. We will open storage in
+    // RW-mode (second parameter has to be false).
+    // Note: Namespace name is limited to 15 chars.
+    defaults.begin("my-app", false);
+    feedinterval = defaults.getULong("feedinterval", 12UL*60UL*60UL*1000UL);
+    feedingtime = defaults.getUInt("feedingtime", 2);
+    feedingintervalenabled = defaults.getBool("feedingintervalenabled", true);
+    lightEnabled = defaults.getBool("lightEnabled", false);
+    automaticFeedingLight = defaults.getBool("automaticFeedingLight", true);
 
     camera_config_t config;
     config.ledc_channel = LEDC_CHANNEL_0;
@@ -133,6 +175,11 @@ void setup() {
     
     startCameraServer();
 
+    Serial.printf("Total heap: %d B\n", ESP.getHeapSize());
+    Serial.printf("Free heap: %d B\n", ESP.getFreeHeap());
+    Serial.printf("Total PSRAM: %d B\n", ESP.getPsramSize());
+    Serial.printf("Free PSRAM: %d B\n", ESP.getFreePsram());
+
     Serial.print("Feeder Ready! Use 'http://");
     Serial.print(WiFi.localIP());
     Serial.println("' to connect");
@@ -151,4 +198,6 @@ void loop() {
     led.process(time);
     delay(10);
     esp_task_wdt_reset();
+
+    checkCommand();
 }
