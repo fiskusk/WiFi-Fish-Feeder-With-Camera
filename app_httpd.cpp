@@ -14,10 +14,10 @@
 
 
 // --- Start header changes for Fish Feeder ---
-unsigned long previousMillis = 0;
+unsigned long previousMillis = 0;   // ms
 unsigned long feedinterval = 24UL*60UL*60UL*1000UL;
-unsigned int feedingtime = 4;
-bool feedingintervalenabled = false;
+unsigned int feedingtime = 2;       // s
+bool feedingintervalenabled = true;
 #define feederPin 12
 
 void runFeeder();
@@ -30,10 +30,11 @@ void feedingAnalogWrite();
 #include "img_converters.h"
 #include "camera_index.h"
 #include "Arduino.h"
+#include "time.h"
 
 #include "fb_gfx.h"
 #include "fd_forward.h"
-#include "dl_lib.h"
+//#include "dl_lib.h"
 #include "fr_forward.h"
 
 #define ENROLL_CONFIRM_TIMES 5
@@ -76,7 +77,8 @@ static int8_t recognition_enabled = 0;
 static int8_t is_enrolling = 0;
 static face_id_list id_list = {0};
 
-static ra_filter_t * ra_filter_init(ra_filter_t * filter, size_t sample_size){
+static ra_filter_t * ra_filter_init(ra_filter_t * filter, size_t sample_size)
+{
     memset(filter, 0, sizeof(ra_filter_t));
 
     filter->values = (int *)malloc(sample_size * sizeof(int));
@@ -89,7 +91,8 @@ static ra_filter_t * ra_filter_init(ra_filter_t * filter, size_t sample_size){
     return filter;
 }
 
-static int ra_filter_run(ra_filter_t * filter, int value){
+static int ra_filter_run(ra_filter_t * filter, int value)
+{
     if(!filter->values){
         return value;
     }
@@ -104,7 +107,8 @@ static int ra_filter_run(ra_filter_t * filter, int value){
     return filter->sum / filter->count;
 }
 
-static void rgb_print(dl_matrix3du_t *image_matrix, uint32_t color, const char * str){
+static void rgb_print(dl_matrix3du_t *image_matrix, uint32_t color, const char * str)
+{
     fb_data_t fb;
     fb.width = image_matrix->w;
     fb.height = image_matrix->h;
@@ -114,7 +118,8 @@ static void rgb_print(dl_matrix3du_t *image_matrix, uint32_t color, const char *
     fb_gfx_print(&fb, (fb.width - (strlen(str) * 14)) / 2, 10, color, str);
 }
 
-static int rgb_printf(dl_matrix3du_t *image_matrix, uint32_t color, const char *format, ...){
+static int rgb_printf(dl_matrix3du_t *image_matrix, uint32_t color, const char *format, ...)
+{
     char loc_buf[64];
     char * temp = loc_buf;
     int len;
@@ -139,7 +144,8 @@ static int rgb_printf(dl_matrix3du_t *image_matrix, uint32_t color, const char *
     return len;
 }
 
-static void draw_face_boxes(dl_matrix3du_t *image_matrix, box_array_t *boxes, int face_id){
+static void draw_face_boxes(dl_matrix3du_t *image_matrix, box_array_t *boxes, int face_id)
+{
     int x, y, w, h, i;
     uint32_t color = FACE_COLOR_YELLOW;
     if(face_id < 0){
@@ -175,7 +181,8 @@ static void draw_face_boxes(dl_matrix3du_t *image_matrix, box_array_t *boxes, in
     }
 }
 
-static int run_face_recognition(dl_matrix3du_t *image_matrix, box_array_t *net_boxes){
+static int run_face_recognition(dl_matrix3du_t *image_matrix, box_array_t *net_boxes)
+{
     dl_matrix3du_t *aligned_face = NULL;
     int matched_id = 0;
 
@@ -217,7 +224,8 @@ static int run_face_recognition(dl_matrix3du_t *image_matrix, box_array_t *net_b
     return matched_id;
 }
 
-static size_t jpg_encode_stream(void * arg, size_t index, const void* data, size_t len){
+static size_t jpg_encode_stream(void * arg, size_t index, const void* data, size_t len)
+{
     jpg_chunking_t *j = (jpg_chunking_t *)arg;
     if(!index){
         j->len = 0;
@@ -229,7 +237,8 @@ static size_t jpg_encode_stream(void * arg, size_t index, const void* data, size
     return len;
 }
 
-static esp_err_t capture_handler(httpd_req_t *req){
+static esp_err_t capture_handler(httpd_req_t *req)
+{
     camera_fb_t * fb = NULL;
     esp_err_t res = ESP_OK;
     int64_t fr_start = esp_timer_get_time();
@@ -314,7 +323,8 @@ static esp_err_t capture_handler(httpd_req_t *req){
     return res;
 }
 
-static esp_err_t stream_handler(httpd_req_t *req){
+static esp_err_t stream_handler(httpd_req_t *req)
+{
     camera_fb_t * fb = NULL;
     esp_err_t res = ESP_OK;
     size_t _jpg_buf_len = 0;
@@ -458,7 +468,8 @@ static esp_err_t stream_handler(httpd_req_t *req){
     return res;
 }
 
-static esp_err_t cmd_handler(httpd_req_t *req){
+static esp_err_t cmd_handler(httpd_req_t *req)
+{
     char*  buf;
     size_t buf_len;
     char variable[32] = {0,};
@@ -568,7 +579,8 @@ static esp_err_t cmd_handler(httpd_req_t *req){
     return httpd_resp_send(req, NULL, 0);
 }
 
-static esp_err_t status_handler(httpd_req_t *req){
+static esp_err_t status_handler(httpd_req_t *req)
+{
     static char json_response[1024];
 
     sensor_t * s = esp_camera_sensor_get();
@@ -610,7 +622,32 @@ static esp_err_t status_handler(httpd_req_t *req){
     return httpd_resp_send(req, json_response, strlen(json_response));
 }
 
-static esp_err_t index_handler(httpd_req_t *req){
+static esp_err_t feeder_handler(httpd_req_t *req)
+{
+    static char json_response[1024];
+
+    struct tm timeinfo;
+    if(!getLocalTime(&timeinfo)){
+      Serial.println("Failed to obtain time");
+      return false;
+    }
+    //Serial.println(&timeinfo, "%A, %d.%B %Y %H:%M:%S");   
+    char timeStringBuff[1024];
+    strftime(timeStringBuff, sizeof(timeStringBuff), "\"%H:%M:%S\"", &timeinfo); 
+
+    char * p = json_response;
+    *p++ = '{';
+  
+    p+=sprintf(p, "\"localTime\":%s", timeStringBuff);
+    *p++ = '}';
+    *p++ = 0;
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_set_hdr(req, "Access-Control-Allow-Origin", "*");
+    return httpd_resp_send(req, json_response, strlen(json_response));
+}
+
+static esp_err_t index_handler(httpd_req_t *req)
+{
     httpd_resp_set_type(req, "text/html");
     httpd_resp_set_hdr(req, "Content-Encoding", "gzip");
     sensor_t * s = esp_camera_sensor_get();
@@ -620,23 +657,21 @@ static esp_err_t index_handler(httpd_req_t *req){
     return httpd_resp_send(req, (const char *)index_ov2640_html_gz, index_ov2640_html_gz_len);
 }
 
-void feedingAnalogWrite(uint8_t channel, uint32_t value, uint32_t valueMax = 180) {
-  // calculate duty, 8191 from 2 ^ 13 - 1
-  uint32_t duty = (8191 / valueMax) * min(value, valueMax);
-  ledcWrite(channel, duty);
+void feedingAnalogWrite(uint8_t channel, uint32_t value, uint32_t valueMax = 180) 
+{
+    // calculate duty, 8191 from 2 ^ 13 - 1
+    uint32_t duty = (8191 / valueMax) * min(value, valueMax);
+    ledcWrite(channel, duty);
 }
 
-void startCameraServer(){
-
-
+void startCameraServer()
+{
     pinMode(feederPin, OUTPUT);
 
     // Feeder servo PWM
     ledcSetup(4, 50, 16);         // channel, freq, resolution
     ledcAttachPin(feederPin, 4);  // pin, channel    
 
-    
-  
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
     httpd_uri_t index_uri = {
@@ -667,10 +702,17 @@ void startCameraServer(){
         .user_ctx  = NULL
     };
 
-   httpd_uri_t stream_uri = {
+    httpd_uri_t stream_uri = {
         .uri       = "/stream",
         .method    = HTTP_GET,
         .handler   = stream_handler,
+        .user_ctx  = NULL
+    };
+
+    httpd_uri_t feeder_uri = {
+        .uri       = "/feeder",
+        .method    = HTTP_GET,
+        .handler   = feeder_handler,
         .user_ctx  = NULL
     };
 
@@ -695,6 +737,7 @@ void startCameraServer(){
         httpd_register_uri_handler(camera_httpd, &cmd_uri);
         httpd_register_uri_handler(camera_httpd, &status_uri);
         httpd_register_uri_handler(camera_httpd, &capture_uri);
+        httpd_register_uri_handler(camera_httpd, &feeder_uri);
     }
 
     config.server_port += 1;
@@ -705,29 +748,28 @@ void startCameraServer(){
     }
 }
 
-void checkFeederTimer() {
+void checkFeederTimer(unsigned long time)
+{
+    if (!feedingintervalenabled)
+        return;
 
-  if (!feedingintervalenabled)
-    return;
+    if (time - previousMillis >= feedinterval) {
+        previousMillis += feedinterval;
 
-  unsigned long currentMillis = millis();
-
-  if (currentMillis - previousMillis >= feedinterval) {
-    previousMillis += feedinterval;
-
-    Serial.println("Feeder timer activated.");
-    runFeeder();
-  }  
+        Serial.println("Feeder timer activated.");
+        runFeeder();
+    }  
 }
 
-void runFeeder() {
-  Serial.print("Start feeding the fish for ");
-  Serial.print(feedingtime);
-  Serial.println(" seconds");
+void runFeeder()
+{
+    Serial.print("Start feeding the fish for ");
+    Serial.print(feedingtime);
+    Serial.println(" seconds");
 
   feedingAnalogWrite(4, 90);
   delay(feedingtime * 1000);  
   feedingAnalogWrite(4, 0);  
 
-  Serial.println("Feeding the fish finished");
+    Serial.println("Feeding the fish finished");
 }
