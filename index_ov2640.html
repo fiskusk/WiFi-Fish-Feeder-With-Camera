@@ -596,7 +596,7 @@
                             <div class="output-group" id="localtime-group">
                                 <label for="actuallocaltime" id="localtimelabel">Actual Time:</label>
                                 <div class="switch">
-                                    <label for="time" id="localTime" type="label" class="feeder-action">hh:mm:ss b</label>
+                                    <label for="time" id="localTime" type="label" class="feeder-action">hh:mm:ss</label>
                                 </div>
                             </div>
                             
@@ -651,8 +651,16 @@
         <script>
 document.addEventListener('DOMContentLoaded', function (event) {
   var baseHost = document.location.origin
-  var streamUrl = baseHost + ':81'
-
+  var streamUrl = baseHost //+ ':81'
+  /*
+  var baseHost = document.location.hostname
+  var basePort = document.location.port
+  if (basePort === '')
+    basePort = '80'
+  var streamPort = (parseInt(basePort) + 1).toString()
+  var streamUrl = 'http://' + baseHost + ':' + streamPort
+  baseHost = 'http://' + baseHost + ':' + basePort
+*/
   const hide = el => {
     el.classList.add('hidden')
   }

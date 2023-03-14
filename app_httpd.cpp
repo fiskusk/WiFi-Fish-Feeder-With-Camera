@@ -12,14 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-
-// --- Start header changes for Fish Feeder ---
-#define feederPin 12
-
-void runFeeder();
-void feedingAnalogWrite();
-// --- End header changes for Fish Feeder ---
-
 #include "esp_http_server.h"
 #include "esp_timer.h"
 #include "esp_camera.h"
@@ -541,38 +533,27 @@ static esp_err_t cmd_handler(httpd_req_t *req)
             detection_enabled = val;
         }
     }
-    else if(!strcmp(variable, "fishfeeder")) {      
-        if (automaticFeedingLight)
-            digitalWrite(4 , HIGH);
-        runFeeder();
-        if (automaticFeedingLight && lightEnabled == false)
-            digitalWrite(4 , LOW);
-      
+    else if(!strcmp(variable, "fishfeeder")) {
+        event = {CommandType::RunFishFeeder, 1};
     }
     else if(!strcmp(variable, "feedingintervalenabled")) {
-        feedingintervalenabled = val == 1;      
+        event = {CommandType::FeedingIntervalEnabled, val};
     }
     else if(!strcmp(variable, "lightenabled")) {
-        command = CommandType::SetLight;
+        event = {CommandType::SetLight, val};
     }
     else if(!strcmp(variable, "feedinginterval")) {
-        Serial.print("Feeding interval changed to: ");
-        Serial.println(val);
-        feedinterval = val*60UL*60UL*1000UL;
-        previousMillis = 0;
+        event = {CommandType::SetFeedingInterval, val};
     }
     else if(!strcmp(variable, "feedingtime")) {
-        Serial.print("Feeding time (seconds) changed to: ");
-        Serial.println(val);
-        feedingtime = val;
+        event = {CommandType::SetFeedingTime, val};
     } else if(!strcmp(variable, "autolight")) {
-        command = CommandType::SetAutomaticLight;
-        Serial.print("Automatic light when feeding changed to: ");
-        val ? Serial.println("ON") : Serial.println("OFF");
-        automaticFeedingLight = val;
+        event = {CommandType::SetAutomaticLight, val};
     } else {
         res = -1;
     }
+
+    checkCommand();
 
     if(res){
         return httpd_resp_send_500(req);
@@ -618,11 +599,7 @@ static esp_err_t status_handler(httpd_req_t *req)
     p+=sprintf(p, "\"face_detect\":%u,", detection_enabled);
     p+=sprintf(p, "\"face_enroll\":%u,", is_enrolling);
     p+=sprintf(p, "\"face_recognize\":%u,", recognition_enabled);
-    p+=sprintf(p, "\"lightenabled\":%u,", lightEnabled);
-    p+=sprintf(p, "\"autolight\":%u,", automaticFeedingLight);
-    p+=sprintf(p, "\"feedingintervalenabled\":%u,", feedingintervalenabled);
-    p+=sprintf(p, "\"feedinginterval\":%u,", feedinterval);
-    p+=sprintf(p, "\"feedingtime\":%u", feedingtime);
+    p = getValues(p);
     *p++ = '}';
     *p++ = 0;
     httpd_resp_set_type(req, "application/json");
@@ -665,21 +642,8 @@ static esp_err_t index_handler(httpd_req_t *req)
     return httpd_resp_send(req, (const char *)index_ov2640_html_gz, index_ov2640_html_gz_len);
 }
 
-void feedingAnalogWrite(uint8_t channel, uint32_t value, uint32_t valueMax = 180) 
-{
-    // calculate duty, 8191 from 2 ^ 13 - 1
-    uint32_t duty = (8191 / valueMax) * min(value, valueMax);
-    ledcWrite(channel, duty);
-}
-
 void startCameraServer()
 {
-    pinMode(feederPin, OUTPUT);
-
-    // Feeder servo PWM
-    ledcSetup(4, 50, 16);         // channel, freq, resolution
-    ledcAttachPin(feederPin, 4);  // pin, channel    
-
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
 
     httpd_uri_t index_uri = {
@@ -746,49 +710,13 @@ void startCameraServer()
         httpd_register_uri_handler(camera_httpd, &status_uri);
         httpd_register_uri_handler(camera_httpd, &capture_uri);
         httpd_register_uri_handler(camera_httpd, &feeder_uri);
+        httpd_register_uri_handler(camera_httpd, &stream_uri);
     }
 
     config.server_port += 1;
     config.ctrl_port += 1;
     Serial.printf("Starting stream server on port: '%d'\n", config.server_port);
-    if (httpd_start(&stream_httpd, &config) == ESP_OK) {
+    /*if (httpd_start(&stream_httpd, &config) == ESP_OK) {
         httpd_register_uri_handler(stream_httpd, &stream_uri);
-    }
-}
-
-void checkFeederTimer(unsigned long time)
-{
-    if (!feedingintervalenabled)
-        return;
-
-    if (time - previousMillis >= feedinterval) {
-        previousMillis += feedinterval;
-
-        Serial.println("Feeder timer activated.");
-        runFeeder();
-    }  
-}
-
-void runFeeder()
-{
-    Serial.print("Start feeding the fish for ");
-    Serial.print(feedingtime);
-    Serial.println(" seconds");
-
-    for (uint8_t sweep = 0; sweep < 180; sweep++)
-    {
-        feedingAnalogWrite(4, sweep);
-        delay((feedingtime * 1000) / 180);
-        Serial.print("Sweep ");
-        Serial.print(sweep);
-        Serial.println(" now");
-    }
-
-    /*
-    feedingAnalogWrite(4, 90);
-    delay(feedingtime * 1000);  
-    feedingAnalogWrite(4, 0);  
-    */
-
-    Serial.println("Feeding the fish finished");
+    }*/
 }

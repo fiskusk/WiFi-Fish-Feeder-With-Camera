@@ -4,6 +4,7 @@
 #include "time.h"
 #include <esp_task_wdt.h>
 #include <Preferences.h>
+#include "Feeder.h"
 #include "globals.h"
 
 // Board: ESP32 Wrover
@@ -20,23 +21,26 @@
 //3 seconds WDT
 #define WDT_TIMEOUT 3
 
+Feeder feeder;
 LedController led;
 Preferences defaults;
 
+const char* ssid = "*** your ssid here ***";
+const char* password = "*** your wi-fi password here ***";
 
 void startCameraServer();
-void checkFeederTimer(unsigned long time);
 
 const char* ntpServer = "pool.ntp.org";
 const long  gmtOffset_sec = 0; // 1 * 60 * 60;
 const int   daylightOffset_sec = 0; // 3600;
 
 unsigned long previousMillis = 0;   // ms
+bool feedEnable = false;
+unsigned long feedStartingTime;
 unsigned long feedinterval;     // s
 unsigned int feedingtime;       // s
 bool feedingintervalenabled;
 bool lightEnabled;
-bool automaticFeedingLight;
 command_t event = {None, 0};
 
 bool printLocalTime()
@@ -51,51 +55,74 @@ bool printLocalTime()
     return true;
 }
 
-void checkCommand()
+char* getValues(char * p)
 {
-    switch (event) {
-        case SetLight:
-            if (val == 1) {
-                digitalWrite(4 , HIGH);
-                lightEnabled = true;
-            }
-            else if (val == 0) {
-                digitalWrite(4 , LOW);      
-                lightEnabled = false;
-            }
-            break;
-        case SetAutomaticLight:
-            break;
-        default:
-            command = None;
-            break;
-        command = None;
-
-    }
+    p+=sprintf(p, "\"lightenabled\":%u,", lightEnabled);
+    p+=sprintf(p, "\"autolight\":%u,", feeder.getAutomaticFeedingLight());
+    p+=sprintf(p, "\"feedingintervalenabled\":%u,", feedingintervalenabled);
+    p+=sprintf(p, "\"feedinginterval\":%u,", feedinterval);
+    p+=sprintf(p, "\"feedingtime\":%u", feedingtime);
+    return p;
 }
 
-void setup() {
-    // Initialize status LED
-    led.init(LED1_NUM, true);
+void checkCommand()
+{
+    defaults.begin("my-app", false);
+    switch (event.command) {
+        case RunFishFeeder:
+            feeder.startFeeding(millis());
+            event.command = None;
+            break;
+        case FeedingIntervalEnabled:
+            Serial.print("Feeding interval is: ");
+            event.value ? Serial.println("ENABLED") : Serial.println("DISABLED");
+            feeder.setFeedingIntervalEnabled(event.value);
+            event.command = None;
+            break;
+        case SetFeedingInterval:
+            Serial.print("Feeding interval changed to: ");
+            Serial.println(event.value);
+            feeder.setFeedInterval(event.value*60UL*60UL*1000UL);
+            event.command = None;
+            break;
+        case SetFeedingTime:
+            Serial.print("Feeding time (seconds) changed to: ");
+            Serial.println(event.value);
+            feeder.setFeedingTime(event.value);
+            event.command = None;
+            break;
+        case SetLight:
+            Serial.print("Feeding light is ");
+            event.value ? Serial.println("ON") : Serial.println("OFF");
+            feeder.setLightEnabled(event.value);
+            event.command = None;
+            break;
+        case SetAutomaticLight:
+            Serial.print("Automatic light when feeding changed to: ");
+            event.value ? Serial.println("ON") : Serial.println("OFF");
+            defaults.putBool("pok", event.value);
+            feeder.setAutomaticFeedingLight(event.value);
+            event.command = None;
+            break;
+        default:
+            led.blink(50, 200, 50);
+            event.command = None;
+            break;
+    }
+    led.blink(500);
+    defaults.end();
+}
 
-    // Indicate that MCU is initializing
-    led.on();
-    
+void serialInit()
+{
     Serial.begin(115200);
     Serial.setDebugOutput(true);
     Serial.println();
+}
 
-    // Open Preferences with my-app namespace. Each application module, library, etc
-    // has to use a namespace name to prevent key name collisions. We will open storage in
-    // RW-mode (second parameter has to be false).
-    // Note: Namespace name is limited to 15 chars.
-    defaults.begin("my-app", false);
-    feedinterval = defaults.getULong("feedinterval", 12UL*60UL*60UL*1000UL);
-    feedingtime = defaults.getUInt("feedingtime", 2);
-    feedingintervalenabled = defaults.getBool("feedingintervalenabled", true);
-    lightEnabled = defaults.getBool("lightEnabled", false);
-    automaticFeedingLight = defaults.getBool("automaticFeedingLight", true);
-
+void cameraInit()
+{
+    
     camera_config_t config;
     config.ledc_channel = LEDC_CHANNEL_0;
     config.ledc_timer = LEDC_TIMER_0;
@@ -154,9 +181,10 @@ void setup() {
     s->set_vflip(s, 1);
     s->set_hmirror(s, 1);
     #endif
+}
 
-    pinMode(4, OUTPUT);
-
+void wifiInit()
+{
     WiFi.begin(ssid, password);
     Serial.print("Connecting to WiFi");
 
@@ -166,20 +194,62 @@ void setup() {
     }
     Serial.println("");
     Serial.println("WiFi connected");
+}
 
-    // Init and get the time
+void timeInit()
+{
     configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
     setenv("TZ","CET-1CEST,M3.5.0,M10.5.0/3",1);
     tzset();
     while (!printLocalTime());
+}
+
+void setup() {
+    // Initialize status LED
+    led.init(LED1_NUM, true);
+
+    // Indicate that MCU is initializing
+    led.on();
+
+    // initialize serial port for debug
+    serialInit();
+
+    // Open Preferences with my-app namespace. Each application module, library, etc
+    // has to use a namespace name to prevent key name collisions. We will open storage in
+    // RW-mode (second parameter has to be false).
+    // Note: Namespace name is limited to 15 chars.
+    defaults.begin("my-app", false);
+    feedinterval = defaults.getULong("feedinterval", 12UL*60UL*60UL*1000UL);
+    feedingtime = defaults.getUInt("feedingtime", 2);
+    feedingintervalenabled = defaults.getBool("feedingintervalenabled", true);
+    lightEnabled = defaults.getBool("lightEnabled", false);
+    bool automaticFeedingLight = defaults.getBool("pok", true);
+
+    Serial.print("Stored value is: ");
+    defaults.getBool("pok") ? Serial.println("ON") : Serial.println("OFF");
+    defaults.end();
+
+    // initialize onboard camera
+    cameraInit();
+
+    // initialize WiFi connection
+    wifiInit();
+
+    // Init and get the time
+    timeInit();
     
+    // start camera server
     startCameraServer();
 
+    // Initialize feeder
+    feeder.init(automaticFeedingLight);
+/*
     Serial.printf("Total heap: %d B\n", ESP.getHeapSize());
     Serial.printf("Free heap: %d B\n", ESP.getFreeHeap());
     Serial.printf("Total PSRAM: %d B\n", ESP.getPsramSize());
     Serial.printf("Free PSRAM: %d B\n", ESP.getFreePsram());
-
+*/
+    // Print welcome info
     Serial.print("Feeder Ready! Use 'http://");
     Serial.print(WiFi.localIP());
     Serial.println("' to connect");
@@ -194,10 +264,8 @@ void setup() {
 void loop() {
     unsigned long time = millis();
 
-    checkFeederTimer(time);
     led.process(time);
+    feeder.process(time);
     delay(10);
     esp_task_wdt_reset();
-
-    checkCommand();
 }
