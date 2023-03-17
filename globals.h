@@ -7,6 +7,7 @@ enum CommandType {
     SetFeedingTime,
     SetAutomaticLight,
     SetLight,
+    SaveFeederSettings,
     None
 };
 
@@ -15,14 +16,7 @@ typedef struct {
         int value;
 } command_t;
 
-// TODO remove these globals 
-extern unsigned long previousMillis;   // ms
-extern unsigned long feedinterval;     // s
-extern unsigned int feedingtime;       // s
-extern bool feedingintervalenabled;
-extern bool lightEnabled;
-
 extern command_t event; // TODO remove this global variable and move it inside checkCommnad function
 
-extern void checkCommand();
-extern char* getValues(char * p);
+extern void feederCheckCommand();
+extern char* feederGetValues(char * p);

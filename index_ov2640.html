@@ -93,7 +93,7 @@
 
             section#buttons {
                 display: flex;
-                flex-wrap: nowrap;
+                flex-wrap: wrap;
                 justify-content: space-between
             }
 
@@ -342,15 +342,20 @@
             }
 
             .image-container {
-                position: absolute;
-                right: 0px;
-                top: 0px;
+                /*cursor: grab;*/
+                display: flex;
+                flex-wrap: wrap;
+                position: relative;
+                left: 5px;
+                top: 10px;
                 min-width: 160px
             }
 
             .close {
+                display: flex;
+                flex-wrap: wrap;
                 position: absolute;
-                right: 5px;
+                left: 5px;
                 top: 5px;
                 background: #ff3034;
                 width: 16px;
@@ -599,6 +604,12 @@
                                     <label for="time" id="localTime" type="label" class="feeder-action">hh:mm:ss</label>
                                 </div>
                             </div>
+                            <div class="output-group" id="lastfeedingtime-group">
+                                <label for="lastfeedingtime" id="lastfeedingtimelabel">Last Feeding Time:</label>
+                                <div class="switch">
+                                    <label for="feedingtime" id="lastfeedingtime" type="label" class="default-action">hh:mm:sssssssss sssssssssssssssssss ssssssssssssss ss</label>
+                                </div>
+                            </div>
                             
                             <div class="input-group" id="lightenabled-group">
                                 <label for="lightenabled">Light Enabled:</label>
@@ -637,22 +648,24 @@
                                 <input type="range" id="feedingtime" min="2" max="30" value="2" step="1" class="default-action">
                                 <div class="range-max">30</div>
                             </div>
+                            <section id="buttons">
+                                <button id="savefeedersettings">Save Feeder Settings</button>
+                                <!-- <button id="face_enroll" class="disabled" disabled="disabled">Enroll Face</button> -->
+                            </section>
                         </nav>
                     </div>
                 </div>
-            </div>
-            <figure>
                 <div id="stream-container" class="image-container hidden">
                     <div class="close" id="close-stream">X</div>
                     <img id="stream" src="">
                 </div>
-            </figure>
+            </div>
         </section>
         <script>
 document.addEventListener('DOMContentLoaded', function (event) {
-  var baseHost = document.location.origin
-  var streamUrl = baseHost //+ ':81'
-  /*
+  //var baseHost = document.location.origin
+  //var streamUrl = baseHost //+ ':81'
+  
   var baseHost = document.location.hostname
   var basePort = document.location.port
   if (basePort === '')
@@ -660,7 +673,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
   var streamPort = (parseInt(basePort) + 1).toString()
   var streamUrl = 'http://' + baseHost + ':' + streamPort
   baseHost = 'http://' + baseHost + ':' + basePort
-*/
+
   const hide = el => {
     el.classList.add('hidden')
   }
@@ -690,6 +703,15 @@ document.addEventListener('DOMContentLoaded', function (event) {
     } else {
       initialValue = el.value
       el.value = value
+    }
+
+    if (el.id === "feedinginterval") {
+        let feedingintervallabel = document.getElementById('feedingintervallabel');
+        feedingintervallabel.innerHTML = "Feed Interval: " + el.value + " hours";
+    }
+    else if (el.id === "feedingtime") {
+        let feedingtimelabel = document.getElementById('feedingtimelabel');
+        feedingtimelabel.innerHTML = "Feed time: " + feedingtime.value + " seconds";
     }
 
     if (updateRemote && initialValue !== value) {
@@ -780,6 +802,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
   //const enrollButton = document.getElementById('face_enroll')
   const closeButton = document.getElementById('close-stream')
   const feedfishButton = document.getElementById('fishfeeder')
+  const saveFeederButton = document.getElementById('savefeedersettings')
 
   const stopStream = () => {
     window.stop();
@@ -820,6 +843,11 @@ document.addEventListener('DOMContentLoaded', function (event) {
   fishfeeder.onclick = () => {
     console.log("Fish feeder button clicked")
     updateConfig(fishfeeder)
+  }
+
+  savefeedersettings.onclick = () => {
+    console.log("Save Feeder Settings clicked")
+    updateConfig(savefeedersettings)
   }
 
   // Attach default on change action

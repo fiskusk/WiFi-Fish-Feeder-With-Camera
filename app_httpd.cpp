@@ -533,27 +533,29 @@ static esp_err_t cmd_handler(httpd_req_t *req)
             detection_enabled = val;
         }
     }
-    else if(!strcmp(variable, "fishfeeder")) {
+    else if (!strcmp(variable, "fishfeeder")) {
         event = {CommandType::RunFishFeeder, 1};
     }
-    else if(!strcmp(variable, "feedingintervalenabled")) {
+    else if (!strcmp(variable, "feedingintervalenabled")) {
         event = {CommandType::FeedingIntervalEnabled, val};
     }
-    else if(!strcmp(variable, "lightenabled")) {
+    else if (!strcmp(variable, "lightenabled")) {
         event = {CommandType::SetLight, val};
     }
-    else if(!strcmp(variable, "feedinginterval")) {
+    else if (!strcmp(variable, "feedinginterval")) {
         event = {CommandType::SetFeedingInterval, val};
     }
-    else if(!strcmp(variable, "feedingtime")) {
+    else if (!strcmp(variable, "feedingtime")) {
         event = {CommandType::SetFeedingTime, val};
-    } else if(!strcmp(variable, "autolight")) {
+    } else if (!strcmp(variable, "autolight")) {
         event = {CommandType::SetAutomaticLight, val};
+    } else if (!strcmp(variable, "savefeedersettings")) {
+        event = {CommandType::SaveFeederSettings, 1};
     } else {
         res = -1;
     }
 
-    checkCommand();
+    feederCheckCommand();
 
     if(res){
         return httpd_resp_send_500(req);
@@ -599,7 +601,7 @@ static esp_err_t status_handler(httpd_req_t *req)
     p+=sprintf(p, "\"face_detect\":%u,", detection_enabled);
     p+=sprintf(p, "\"face_enroll\":%u,", is_enrolling);
     p+=sprintf(p, "\"face_recognize\":%u,", recognition_enabled);
-    p = getValues(p);
+    p = feederGetValues(p);
     *p++ = '}';
     *p++ = 0;
     httpd_resp_set_type(req, "application/json");
@@ -710,13 +712,12 @@ void startCameraServer()
         httpd_register_uri_handler(camera_httpd, &status_uri);
         httpd_register_uri_handler(camera_httpd, &capture_uri);
         httpd_register_uri_handler(camera_httpd, &feeder_uri);
-        httpd_register_uri_handler(camera_httpd, &stream_uri);
     }
 
     config.server_port += 1;
     config.ctrl_port += 1;
     Serial.printf("Starting stream server on port: '%d'\n", config.server_port);
-    /*if (httpd_start(&stream_httpd, &config) == ESP_OK) {
+    if (httpd_start(&stream_httpd, &config) == ESP_OK) {
         httpd_register_uri_handler(stream_httpd, &stream_uri);
-    }*/
+    }
 }

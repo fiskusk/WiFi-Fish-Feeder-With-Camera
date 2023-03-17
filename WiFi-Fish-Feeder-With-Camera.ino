@@ -3,7 +3,6 @@
 #include "LedController.h"
 #include "time.h"
 #include <esp_task_wdt.h>
-#include <Preferences.h>
 #include "Feeder.h"
 #include "globals.h"
 
@@ -23,7 +22,6 @@
 
 Feeder feeder;
 LedController led;
-Preferences defaults;
 
 const char* ssid = "*** your ssid here ***";
 const char* password = "*** your wi-fi password here ***";
@@ -34,13 +32,6 @@ const char* ntpServer = "pool.ntp.org";
 const long  gmtOffset_sec = 0; // 1 * 60 * 60;
 const int   daylightOffset_sec = 0; // 3600;
 
-unsigned long previousMillis = 0;   // ms
-bool feedEnable = false;
-unsigned long feedStartingTime;
-unsigned long feedinterval;     // s
-unsigned int feedingtime;       // s
-bool feedingintervalenabled;
-bool lightEnabled;
 command_t event = {None, 0};
 
 bool printLocalTime()
@@ -55,19 +46,19 @@ bool printLocalTime()
     return true;
 }
 
-char* getValues(char * p)
+char* feederGetValues(char * p)
 {
-    p+=sprintf(p, "\"lightenabled\":%u,", lightEnabled);
-    p+=sprintf(p, "\"autolight\":%u,", feeder.getAutomaticFeedingLight());
-    p+=sprintf(p, "\"feedingintervalenabled\":%u,", feedingintervalenabled);
-    p+=sprintf(p, "\"feedinginterval\":%u,", feedinterval);
-    p+=sprintf(p, "\"feedingtime\":%u", feedingtime);
+    p+=sprintf(p, "\"lightenabled\":%u,", feeder.getLightEnabled() );
+    p+=sprintf(p, "\"autolight\":%u,", feeder.getAutomaticFeedingLight() );
+    p+=sprintf(p, "\"feedingintervalenabled\":%u,", feeder.getFeedingIntervalEnabled() );
+    p+=sprintf(p, "\"feedinginterval\":%u,", feeder.getFeedingInterval() );
+    p+=sprintf(p, "\"feedingtime\":%u,", feeder.getFeedingTime() );
+    p+=sprintf(p, "\"lastfeedingtime\":\"%s\"", feeder.getLastFeedingTime() );
     return p;
 }
 
-void checkCommand()
+void feederCheckCommand()
 {
-    defaults.begin("my-app", false);
     switch (event.command) {
         case RunFishFeeder:
             feeder.startFeeding(millis());
@@ -82,7 +73,7 @@ void checkCommand()
         case SetFeedingInterval:
             Serial.print("Feeding interval changed to: ");
             Serial.println(event.value);
-            feeder.setFeedInterval(event.value*60UL*60UL*1000UL);
+            feeder.setFeedInterval(event.value);
             event.command = None;
             break;
         case SetFeedingTime:
@@ -100,8 +91,11 @@ void checkCommand()
         case SetAutomaticLight:
             Serial.print("Automatic light when feeding changed to: ");
             event.value ? Serial.println("ON") : Serial.println("OFF");
-            defaults.putBool("pok", event.value);
             feeder.setAutomaticFeedingLight(event.value);
+            event.command = None;
+            break;
+        case SaveFeederSettings:
+            feeder.saveDefaults();
             event.command = None;
             break;
         default:
@@ -110,7 +104,6 @@ void checkCommand()
             break;
     }
     led.blink(500);
-    defaults.end();
 }
 
 void serialInit()
@@ -214,21 +207,6 @@ void setup() {
     // initialize serial port for debug
     serialInit();
 
-    // Open Preferences with my-app namespace. Each application module, library, etc
-    // has to use a namespace name to prevent key name collisions. We will open storage in
-    // RW-mode (second parameter has to be false).
-    // Note: Namespace name is limited to 15 chars.
-    defaults.begin("my-app", false);
-    feedinterval = defaults.getULong("feedinterval", 12UL*60UL*60UL*1000UL);
-    feedingtime = defaults.getUInt("feedingtime", 2);
-    feedingintervalenabled = defaults.getBool("feedingintervalenabled", true);
-    lightEnabled = defaults.getBool("lightEnabled", false);
-    bool automaticFeedingLight = defaults.getBool("pok", true);
-
-    Serial.print("Stored value is: ");
-    defaults.getBool("pok") ? Serial.println("ON") : Serial.println("OFF");
-    defaults.end();
-
     // initialize onboard camera
     cameraInit();
 
@@ -242,7 +220,7 @@ void setup() {
     startCameraServer();
 
     // Initialize feeder
-    feeder.init(automaticFeedingLight);
+    feeder.init();
 /*
     Serial.printf("Total heap: %d B\n", ESP.getHeapSize());
     Serial.printf("Free heap: %d B\n", ESP.getFreeHeap());
