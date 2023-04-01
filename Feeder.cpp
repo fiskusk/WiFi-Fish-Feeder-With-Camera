@@ -77,14 +77,14 @@ void Feeder::startFeeding(unsigned long time)
 {
     struct tm timeinfo;
     char timeStringBuff[256];
-    if(!getLocalTime(&timeinfo)){
+    if(!getLocalTime(&timeinfo, 10)){
       Serial.println("Failed to obtain time");
-      printf(timeStringBuff, "Unknown");
+      //printf(timeStringBuff, "Unknown");
     }
-    else{
-        //Serial.println(&timeinfo, "%A, %d.%B %Y %H:%M:%S");   
-        strftime(timeStringBuff, sizeof(timeStringBuff), "%a, %d.%b %Y %H:%M:%S", &timeinfo); 
-    }
+    //else{
+    //    //Serial.println(&timeinfo, "%A, %d.%B %Y %H:%M:%S");   
+    //}
+    strftime(timeStringBuff, sizeof(timeStringBuff), "%a, %d.%b %Y %H:%M:%S", &timeinfo); 
 
     memcpy(lastFeedingTime, timeStringBuff, sizeof(timeStringBuff));
 

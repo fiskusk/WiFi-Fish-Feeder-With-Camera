@@ -5,6 +5,7 @@
 #include <esp_task_wdt.h>
 #include "Feeder.h"
 #include "globals.h"
+#include "Preferences.h"
 
 // Board: ESP32 Wrover
 // Partition scheme: Huge APP
@@ -18,13 +19,11 @@
 #include "camera_pins.h"
 
 //3 seconds WDT
-#define WDT_TIMEOUT 3
+#define WDT_TIMEOUT 15
 
 Feeder feeder;
 LedController led;
-
-const char* ssid = "*** your ssid here ***";
-const char* password = "*** your wi-fi password here ***";
+Preferences creditials;
 
 void startCameraServer();
 
@@ -33,6 +32,9 @@ const long  gmtOffset_sec = 0; // 1 * 60 * 60;
 const int   daylightOffset_sec = 0; // 3600;
 
 command_t event = {None, 0};
+bool wifiConnected = false;
+unsigned long wifiReconnectionStartTime = 0;
+const uint32_t wifiReconnectionDelay = 10000;
 
 bool printLocalTime()
 {
@@ -111,6 +113,9 @@ void serialInit()
     Serial.begin(115200);
     Serial.setDebugOutput(true);
     Serial.println();
+    Serial.println();
+    Serial.println("========================================");
+    Serial.println("========================================");
 }
 
 void cameraInit()
@@ -176,25 +181,138 @@ void cameraInit()
     #endif
 }
 
-void wifiInit()
+void wifiCreditialsInit()
 {
-    WiFi.begin(ssid, password);
+    creditials.begin("creditials", false);
+
+    creditials.getString("ssid", "**EMPTY**");
+    creditials.getString("password", "**EMPTY**");
+
+    Serial.print("Stored ssid: ");
+    Serial.println(creditials.getString("ssid") );
+    //Serial.print("Stored password: ");
+    //Serial.println(creditials.getString("password") );
+
+    creditials.end();
+}
+
+bool wifiInit(unsigned long connectingStartingTime, uint32_t timeoutMs = 10000)
+{
+    creditials.begin("creditials", true);
+    
+    WiFi.begin(const_cast<char*>(creditials.getString("ssid").c_str()), 
+               const_cast<char*>(creditials.getString("password").c_str()));
+    creditials.end();
     Serial.print("Connecting to WiFi");
 
-    while (WiFi.status() != WL_CONNECTED) {
+    while (WiFi.status() != WL_CONNECTED && millis() < connectingStartingTime + timeoutMs) {
+        esp_task_wdt_reset();
         delay(500);
         Serial.print(".");
     }
+
+    if (WiFi.status() == WL_CONNECTED) {
+        Serial.println("");
+        Serial.println("WiFi connected");
+        Serial.println();
+        return true;
+    }
+    WiFi.disconnect();
     Serial.println("");
-    Serial.println("WiFi connected");
+    Serial.println("WiFi connection timeout");
+    Serial.println();
+    return false;
 }
 
-void timeInit()
+void timeInit(int maxTryNr = 5)
 {
     configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
     setenv("TZ","CET-1CEST,M3.5.0,M10.5.0/3",1);
     tzset();
-    while (!printLocalTime());
+    for (int tryNr = 0; tryNr < maxTryNr; tryNr++) {
+        if (printLocalTime());
+            return;
+    }
+    Serial.println("The maximum number of attempts has been reached");
+    struct tm timeinfo;
+    Serial.println(&timeinfo, "%A, %d.%B %Y %H:%M:%S");
+}
+
+void commandNewCreditials()
+{
+    String received;
+    creditials.begin("creditials", false);
+
+    Serial.println("Enter new WiFi SSID:");
+    while (Serial.available() == false) { esp_task_wdt_reset();}
+    received = Serial.readString();
+    creditials.putString("ssid", received);
+
+    Serial.print("Enter new WiFi Password for \"");
+    Serial.print(creditials.getString("ssid"));
+    Serial.println("\":");
+    while (Serial.available() == false) { esp_task_wdt_reset();}
+    received = Serial.readString();
+    creditials.putString("password", received);
+
+    creditials.end();
+
+    Serial.println("New Creditials Saved. Reboot now...");
+    ESP.restart();
+}
+
+void scanWifi()
+{
+    // WiFi.scanNetworks will return the number of networks found
+    int n = WiFi.scanNetworks();
+    if (n == WIFI_SCAN_FAILED) {
+        Serial.println("Scan failed");
+        return;
+    }
+    Serial.println("Scan done");
+    if (n == 0) {
+        Serial.println("No networks found");
+    } else {
+        Serial.print(n);
+        Serial.println(" networks found");
+        for (int i = 0; i < n; ++i) {
+        // Print SSID and RSSI for each network found
+        Serial.print(i + 1);
+        Serial.print(": ");
+        Serial.print(WiFi.SSID(i));
+        Serial.print(" (");
+        Serial.print(WiFi.RSSI(i));
+        Serial.print(")");
+        Serial.println((WiFi.encryptionType(i) == WIFI_AUTH_OPEN)?" ":"*");
+        delay(10);
+        }
+    }
+}
+
+void unknownCommand(String received)
+{
+    Serial.print("Received command \"");
+    Serial.print(received);
+    Serial.println("\" unknown!");
+}
+
+void checkSerialCommand(String received)
+{
+    if (received == "W") {
+        Serial.println("Press \"N\" for enter new creditials; \"S\" for scan WiFi Networks; \"R\" for reboot");
+        while (Serial.available() == false) { esp_task_wdt_reset();}
+        received = Serial.readString();
+        if (received == "N")
+            commandNewCreditials();
+        else if (received == "S")
+            scanWifi();
+        else if (received == "R")
+            ESP.restart();
+        else 
+            unknownCommand(received);
+    } else {
+        unknownCommand(received);
+    }
 }
 
 void setup() {
@@ -211,32 +329,33 @@ void setup() {
     cameraInit();
 
     // initialize WiFi connection
-    wifiInit();
+    wifiCreditialsInit();
+    wifiConnected = wifiInit(millis(), 15000);
 
-    // Init and get the time
-    timeInit();
-    
-    // start camera server
-    startCameraServer();
+    if (wifiConnected) {
+        // Init and get the time
+        timeInit();
+        // start camera server
+        startCameraServer();
+    }
 
     // Initialize feeder
     feeder.init();
-/*
-    Serial.printf("Total heap: %d B\n", ESP.getHeapSize());
-    Serial.printf("Free heap: %d B\n", ESP.getFreeHeap());
-    Serial.printf("Total PSRAM: %d B\n", ESP.getPsramSize());
-    Serial.printf("Free PSRAM: %d B\n", ESP.getFreePsram());
-*/
-    // Print welcome info
-    Serial.print("Feeder Ready! Use 'http://");
-    Serial.print(WiFi.localIP());
-    Serial.println("' to connect");
 
     // configure ESP Watchdog
     esp_task_wdt_init(WDT_TIMEOUT, true); //enable panic so ESP32 restarts
     esp_task_wdt_add(NULL); //add current thread to WDT watch
 
-    led.repeatBlink(50, 1500);
+    // Print welcome info
+    if (wifiConnected) {
+        Serial.print("Feeder Ready! Use 'http://");
+        Serial.print(WiFi.localIP());
+        Serial.println("' to connect");
+        led.repeatBlink(50, 1500);
+    } else {
+        Serial.println("WiFi not connected. For configure WiFi connection enter \"W\"");
+        led.repeatBlink(100, 100);
+    }
 }
 
 void loop() {
@@ -244,6 +363,8 @@ void loop() {
 
     led.process(time);
     feeder.process(time);
-    delay(10);
     esp_task_wdt_reset();
+
+    if (Serial.available() == true)
+        checkSerialCommand(Serial.readString());
 }

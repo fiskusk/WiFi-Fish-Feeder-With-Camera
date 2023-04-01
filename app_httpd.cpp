@@ -614,9 +614,8 @@ static esp_err_t feeder_handler(httpd_req_t *req)
     static char json_response[1024];
 
     struct tm timeinfo;
-    if(!getLocalTime(&timeinfo)){
-      Serial.println("Failed to obtain time");
-      return false;
+    if(!getLocalTime(&timeinfo, 10)){
+      //Serial.println("Failed to obtain time");
     }
     //Serial.println(&timeinfo, "%A, %d.%B %Y %H:%M:%S");   
     char timeStringBuff[1024];
