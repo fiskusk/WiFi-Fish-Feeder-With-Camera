@@ -114,6 +114,37 @@ void Feeder::checkFeederTimer(unsigned long time)
     if (time - previousMillis >= feedInterval*60UL*60UL*1000UL) {
         previousMillis += feedInterval*60UL*60UL*1000UL;
 
+        if (feedCalendarEnabled) {
+            struct tm timeinfo;
+            if(!getLocalTime(&timeinfo, 10)){
+                Serial.println("Failed to obtain time");
+            }
+            switch (timeinfo.tm_wday) {
+                case 0:
+                    if (!feedOnSunday) return;
+                    break;
+                case 1:
+                    if (!feedOnMonday) return;
+                    break;
+                case 2:
+                    if (!feedOnTuesday) return;
+                    break;
+                case 3:
+                    if (!feedOnWednesday) return;
+                    break;
+                case 4:
+                    if (!feedOnThursday) return;
+                    break;
+                case 5:
+                    if (!feedOnFriday) return;
+                    break;
+                case 6:
+                    if (!feedOnSaturday) return;
+                    break;
+                default:
+                    break;
+            }
+        }
         Serial.println("Feeder timer activated.");
         startFeeding(time);
     }  
@@ -155,17 +186,6 @@ void Feeder::runFeeder(unsigned long time)
         Serial.println("Feeding the fish finished");
         feedEnable = false;
     }
-    
-    /*
-    for (uint8_t sweep = 0; sweep < 180; sweep++)
-    {
-        feedingAnalogWrite(4, sweep);
-        delay((feedingtime * 1000) / 180);
-        Serial.print("Sweep ");
-        Serial.print(sweep);
-        Serial.println(" now");
-    }
-    */
 }
 
 void Feeder::feedingAnalogWrite(uint8_t channel, uint32_t value, uint32_t valueMax) 
