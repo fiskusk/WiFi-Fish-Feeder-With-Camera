@@ -11,6 +11,17 @@ void Feeder::init()
     automaticFeedingLight = preferences.getBool("autoFeedLight", true);
     preferences.end();
 
+    feederCalendar.begin("feederCalendar", false);
+    feedCalendarEnabled = feederCalendar.getBool("feedCalEn", true);
+    feedOnMonday = feederCalendar.getBool("feedOnMon", true);
+    feedOnTuesday = feederCalendar.getBool("feedOnTue", true);
+    feedOnWednesday = feederCalendar.getBool("feedOnWed", true);
+    feedOnThursday = feederCalendar.getBool("feedOnThu", true);
+    feedOnFriday = feederCalendar.getBool("feedOnFri", true);
+    feedOnSaturday = feederCalendar.getBool("feedOnSat", false);
+    feedOnSunday = feederCalendar.getBool("feedOnSun", true);
+    feederCalendar.end();
+
     previousMillis =    0;   // ms
     feedEnable = false;
     feedStartingTime = 0;
@@ -51,6 +62,41 @@ void Feeder::saveDefaults()
     Serial.println("Current feeding settings saved");
 
     preferences.end();
+}
+
+void Feeder::saveFeederCalendar()
+{
+    feederCalendar.begin("feederCalendar", false);
+
+    feederCalendar.putBool("feedCalEn", feedCalendarEnabled);
+    feederCalendar.putBool("feedOnMon", feedOnMonday);
+    feederCalendar.putBool("feedOnTue", feedOnTuesday);
+    feederCalendar.putBool("feedOnWed", feedOnWednesday);
+    feederCalendar.putBool("feedOnThu", feedOnThursday);
+    feederCalendar.putBool("feedOnFri", feedOnFriday);
+    feederCalendar.putBool("feedOnSat", feedOnSaturday);
+    feederCalendar.putBool("feedOnSun", feedOnSunday);
+
+    Serial.print("Stored feedCalendarEnabled: ");
+    Serial.println(feederCalendar.getBool("feedCalEn") );
+    Serial.print("Stored feedOnMonday: ");
+    Serial.println(feederCalendar.getBool("feedOnMon") );
+    Serial.print("Stored feedOnTuesday: ");
+    Serial.println(feederCalendar.getBool("feedOnTue") );
+    Serial.print("Stored feedOnWednesday: ");
+    Serial.println(feederCalendar.getBool("feedOnWed") );
+    Serial.print("Stored feedOnThursday: ");
+    Serial.println(feederCalendar.getBool("feedOnThu") );
+    Serial.print("Stored feedOnFriday: ");
+    Serial.println(feederCalendar.getBool("feedOnFri") );
+    Serial.print("Stored feedOnSaturday: ");
+    Serial.println(feederCalendar.getBool("feedOnSat") );
+    Serial.print("Stored feedOnSunday: ");
+    Serial.println(feederCalendar.getBool("feedOnSun") );
+
+    Serial.println("Current feeding calendar stored");
+
+    feederCalendar.end();
 }
 
 char* Feeder::getLastFeedingTime()

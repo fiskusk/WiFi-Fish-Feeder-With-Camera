@@ -55,7 +55,15 @@ char* feederGetValues(char * p)
     p+=sprintf(p, "\"feedingintervalenabled\":%u,", feeder.getFeedingIntervalEnabled() );
     p+=sprintf(p, "\"feedinginterval\":%u,", feeder.getFeedingInterval() );
     p+=sprintf(p, "\"feedingtime\":%u,", feeder.getFeedingTime() );
-    p+=sprintf(p, "\"lastfeedingtime\":\"%s\"", feeder.getLastFeedingTime() );
+    p+=sprintf(p, "\"lastfeedingtime\":\"%s\",", feeder.getLastFeedingTime() );
+    p+=sprintf(p, "\"feedercalendarenable\":%u,", feeder.getFeedingCalendarEnabled() );
+    p+=sprintf(p, "\"feedonmon\":%u,", feeder.getFeedingOnMonday() );
+    p+=sprintf(p, "\"feedontue\":%u,", feeder.getFeedingOnTuesday() );
+    p+=sprintf(p, "\"feedonwed\":%u,", feeder.getFeedingOnWednesday() );
+    p+=sprintf(p, "\"feedonthu\":%u,", feeder.getFeedingOnThursday() );
+    p+=sprintf(p, "\"feedonfri\":%u,", feeder.getFeedingOnFriday() );
+    p+=sprintf(p, "\"feedonsat\":%u,", feeder.getFeedingOnSaturday() );
+    p+=sprintf(p, "\"feedonsun\":%u", feeder.getFeedingOnSunday() );
     return p;
 }
 
@@ -98,6 +106,58 @@ void feederCheckCommand()
             break;
         case SaveFeederSettings:
             feeder.saveDefaults();
+            event.command = None;
+            break;
+        case SaveFeederCalendar:
+            feeder.saveFeederCalendar();
+            event.command = None;
+            break;
+        case SetFeederCalendarEnabled:
+            Serial.print("Feeding Calendar is ");
+            event.value ? Serial.println("ENABLED") : Serial.println("DISABLED");
+            feeder.setFeedingCalendarEnabled(event.value);
+            event.command = None;
+            break;
+        case SetFeedOnMonday:
+            Serial.print("Feeding on Monday is ");
+            event.value ? Serial.println("ON") : Serial.println("OFF");
+            feeder.setFeedingOnMonday(event.value);
+            event.command = None;
+            break;
+        case SetFeedOnTuesday:
+            Serial.print("Feeding on Thuesday is ");
+            event.value ? Serial.println("ON") : Serial.println("OFF");
+            feeder.setFeedingOnTuesday(event.value);
+            event.command = None;
+            break;
+        case SetFeedOnWednesday:
+            Serial.print("Feeding on Wednesday is ");
+            event.value ? Serial.println("ON") : Serial.println("OFF");
+            feeder.setFeedingOnWednesday(event.value);
+            event.command = None;
+            break;
+        case SetFeedOnThursday:
+            Serial.print("Feeding on Thursday is ");
+            event.value ? Serial.println("ON") : Serial.println("OFF");
+            feeder.setFeedingOnThursday(event.value);
+            event.command = None;
+            break;
+        case SetFeedOnFriday:
+            Serial.print("Feeding on Friday is ");
+            event.value ? Serial.println("ON") : Serial.println("OFF");
+            feeder.setFeedingOnFriday(event.value);
+            event.command = None;
+            break;
+        case SetFeedOnSaturday:
+            Serial.print("Feeding on Saturday is ");
+            event.value ? Serial.println("ON") : Serial.println("OFF");
+            feeder.setFeedingOnSaturday(event.value);
+            event.command = None;
+            break;
+        case SetFeedOnSunday:
+            Serial.print("Feeding on Sunday is ");
+            event.value ? Serial.println("ON") : Serial.println("OFF");
+            feeder.setFeedingOnSunday(event.value);
             event.command = None;
             break;
         default:

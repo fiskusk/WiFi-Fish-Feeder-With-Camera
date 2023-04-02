@@ -129,6 +129,22 @@
                 display: flex
             }
 
+            #nav-toggle-3 {
+                cursor: pointer;
+                display: block
+            }
+
+            #nav-toggle-cb-3 {
+                outline: 0;
+                opacity: 0;
+                width: 0;
+                height: 0
+            }
+
+            #nav-toggle-cb-3:checked+#menu {
+                display: flex
+            }
+
             .input-group {
                 display: flex;
                 flex-wrap: nowrap;
@@ -601,13 +617,13 @@
                             <div class="output-group" id="localtime-group">
                                 <label for="actuallocaltime" id="localtimelabel">Actual Time:</label>
                                 <div class="switch">
-                                    <label for="time" id="localTime" type="label" class="feeder-action">hh:mm:ss</label>
+                                    <label for="time" id="localTime" type="label" class="feeder-action"></label>
                                 </div>
                             </div>
                             <div class="output-group" id="lastfeedingtime-group">
                                 <label for="lastfeedingtime" id="lastfeedingtimelabel">Last Feeding Time:</label>
                                 <div class="switch">
-                                    <label for="feedingtime" id="lastfeedingtime" type="label" class="default-action">hh:mm:sssssssss sssssssssssssssssss ssssssssssssss ss</label>
+                                    <label for="feedingtime" id="lastfeedingtime" type="label" class="default-action"></label>
                                 </div>
                             </div>
                             
@@ -655,6 +671,92 @@
                         </nav>
                     </div>
                 </div>
+
+                <div id="logo">
+                    <label for="nav-toggle-cb-3" id="nav-toggle-3">&#9776;&nbsp;&nbsp;Toggle Feeder Calendar</label>
+                </div>
+
+                <div id="content">
+                    <div id="sidebar">
+                        <input type="checkbox" id="nav-toggle-cb-3" checked="checked">
+                        <nav id="menu">
+                            <div class="input-group" id="feedercalendar-group">
+                                <label for="feedercalendarenable">Feeder Calendar Enabled:</label>
+                                <div class="switch">
+                                    <input id="feedercalendarenable" type="checkbox" class="default-action">
+                                    <label class="slider" for="feedercalendarenable"></label>
+                                </div>
+                            </div>
+
+                            <div class="input-group" id="feedercalendar-group">
+                                <label for="feedercalendar">Feed on:</label>
+                            </div> 
+
+                            <div class="input-group" id="feedercalendar-group">
+                                <label for="feedonmon">Monday:</label>
+                                <div class="switch">
+                                    <input id="feedonmon" type="checkbox" class="default-action">
+                                    <label class="slider" for="feedonmon"></label>
+                                </div>
+                            </div>  
+
+                            <div class="input-group" id="feedercalendar-group">
+                                <label for="feedontue">Tuesday:</label>
+                                <div class="switch">
+                                    <input id="feedontue" type="checkbox" class="default-action">
+                                    <label class="slider" for="feedontue"></label>
+                                </div>
+                            </div>  
+
+                            <div class="input-group" id="feedercalendar-group">
+                                <label for="feedonwed">Wednesday:</label>
+                                <div class="switch">
+                                    <input id="feedonwed" type="checkbox" class="default-action">
+                                    <label class="slider" for="feedonwed"></label>
+                                </div>
+                            </div>  
+
+                            <div class="input-group" id="feedercalendar-group">
+                                <label for="feedonthu">Thursday:</label>
+                                <div class="switch">
+                                    <input id="feedonthu" type="checkbox" class="default-action">
+                                    <label class="slider" for="feedonthu"></label>
+                                </div>
+                            </div>  
+
+                            <div class="input-group" id="feedercalendar-group">
+                                <label for="feedonfri">Friday:</label>
+                                <div class="switch">
+                                    <input id="feedonfri" type="checkbox" class="default-action">
+                                    <label class="slider" for="feedonfri"></label>
+                                </div>
+                            </div>  
+
+                            <div class="input-group" id="feedercalendar-group">
+                                <label for="feedonsat">Saturday:</label>
+                                <div class="switch">
+                                    <input id="feedonsat" type="checkbox" class="default-action">
+                                    <label class="slider" for="feedonsat"></label>
+                                </div>
+                            </div>  
+
+                            <div class="input-group" id="feedercalendar-group">
+                                <label for="feedonsun">Sunday:</label>
+                                <div class="switch">
+                                    <input id="feedonsun" type="checkbox" class="default-action">
+                                    <label class="slider" for="feedonsun"></label>
+                                </div>
+                            </div>
+
+                            <section id="buttons">
+                                <button id="savefeedercalendar">Save Feeder Calendar</button>
+                                <!-- <button id="face_enroll" class="disabled" disabled="disabled">Enroll Face</button> -->
+                            </section>
+
+                        </nav>
+                    </div>
+                </div>
+
                 <div id="stream-container" class="image-container hidden">
                     <div class="close" id="close-stream">X</div>
                     <img id="stream" src="">
@@ -803,6 +905,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
   const closeButton = document.getElementById('close-stream')
   const feedfishButton = document.getElementById('fishfeeder')
   const saveFeederButton = document.getElementById('savefeedersettings')
+  const saveFeederCalendarButton = document.getElementById('savefeedercalendar')
 
   const stopStream = () => {
     window.stop();
@@ -848,6 +951,11 @@ document.addEventListener('DOMContentLoaded', function (event) {
   savefeedersettings.onclick = () => {
     console.log("Save Feeder Settings clicked")
     updateConfig(savefeedersettings)
+  }
+
+  savefeedercalendar.onclick = () => {
+    console.log("Save Feeder Calendar clicked")
+    updateConfig(savefeedercalendar)
   }
 
   // Attach default on change action

@@ -8,6 +8,15 @@ enum CommandType {
     SetAutomaticLight,
     SetLight,
     SaveFeederSettings,
+    SaveFeederCalendar,
+    SetFeederCalendarEnabled,
+    SetFeedOnMonday,
+    SetFeedOnTuesday,
+    SetFeedOnWednesday,
+    SetFeedOnThursday,
+    SetFeedOnFriday,
+    SetFeedOnSaturday,
+    SetFeedOnSunday,
     None
 };
 
