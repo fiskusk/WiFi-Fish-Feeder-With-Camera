@@ -301,6 +301,18 @@
                 background: #363636
             }
 
+            input[type=time], select {
+                width: 100%;
+                display: flex;
+                border: 1px solid #ccc;
+                border-radius: 4px;
+                box-sizing: border-box;
+            }
+            
+            input[type=time]:focus {
+                border: 3px solid #555;
+            }
+
             .switch {
                 display: block;
                 position: relative;
@@ -652,10 +664,41 @@
                             </div>  
 
                             <div class="input-group" id="feedinginterval-group">
-                                <label for="feedinginterval" id="feedingintervallabel">Feed Interval: ? hours:</label>
-                                <div class="range-min">6</div>
-                                <input type="range" id="feedinginterval" min="6" max="24" value="24" step="6" class="default-action">
-                                <div class="range-max">24</div>
+                                <label for="feedinginterval" id="feedingintervallabel">Feed Interval:</label>
+                                <select id="feedinginterval" class="default-action">
+                                    <option value="1">1. times</option>
+                                    <option value="2" selected="selected">2. times</option>
+                                    <option value="3">3. times</option>
+                                    <option value="4">4. times</option>
+                                </select>
+                            </div>
+
+                            <div class="input-group" id="firstfeed-group">
+                                <label for="firstfeed">1. Feed</label>
+                                <div>
+                                    <input type="time" id="firstfeed" name="firstfeedname" step="2" class="default-action">
+                                </div>
+                            </div>
+
+                            <div class="input-group" id="secondfeed-group">
+                                <label for="secondfeed">2. Feed</label>
+                                <div>
+                                    <input type="time" id="secondfeed" name="secondfeedname" step="2" class="default-action">
+                                </div>
+                            </div>
+
+                            <div class="input-group" id="thirdfeed-group">
+                                <label for="thirdfeed">3. Feed</label>
+                                <div>
+                                    <input type="time" id="thirdfeed" name="thirdfeedname" step="2" class="default-action">
+                                </div>
+                            </div>
+
+                            <div class="input-group" id="fourthfeed-group">
+                                <label for="fourthfeed">4. Feed</label>
+                                <div>
+                                    <input type="time" id="fourthfeed" name="fourthfeedname" step="2" class="default-action">
+                                </div>
                             </div>
 
                             <div class="input-group" id="feedingtime-group">
@@ -807,11 +850,7 @@ document.addEventListener('DOMContentLoaded', function (event) {
       el.value = value
     }
 
-    if (el.id === "feedinginterval") {
-        let feedingintervallabel = document.getElementById('feedingintervallabel');
-        feedingintervallabel.innerHTML = "Feed Interval: " + el.value + " hours";
-    }
-    else if (el.id === "feedingtime") {
+    if (el.id === "feedingtime") {
         let feedingtimelabel = document.getElementById('feedingtimelabel');
         feedingtimelabel.innerHTML = "Feed time: " + feedingtime.value + " seconds";
     }
@@ -833,6 +872,40 @@ document.addEventListener('DOMContentLoaded', function (event) {
         value ? show(wb) : hide(wb)
       //} else if(el.id === "face_recognize"){
         //value ? enable(enrollButton) : disable(enrollButton)
+      } else if (el.id === "feedinginterval") {
+        switch (value)
+        {
+            case 1:
+                show(firstfeed)
+                hide(secondfeed)
+                hide(thirdfeed)
+                hide(fourthfeed)
+                break;
+            case 2:
+                show(firstfeed)
+                show(secondfeed)
+                hide(thirdfeed)
+                hide(fourthfeed)
+                break;
+            case 3:
+                show(firstfeed)
+                show(secondfeed)
+                show(thirdfeed)
+                hide(fourthfeed)
+                break;
+            case 4:
+                show(firstfeed)
+                show(secondfeed)
+                show(thirdfeed)
+                show(fourthfeed)
+                break;
+            default:
+                hide(firstfeed)
+                hide(secondfeed)
+                hide(thirdfeed)
+                hide(fourthfeed)
+                break;
+        }
       }
     }
   }
@@ -967,14 +1040,46 @@ document.addEventListener('DOMContentLoaded', function (event) {
 
   // Custom actions
   const feedinginterval = document.getElementById('feedinginterval')
+  const firstfeed = document.getElementById('firstfeed-group')
+  const secondfeed = document.getElementById('secondfeed-group')
+  const thirdfeed = document.getElementById('thirdfeed-group')
+  const fourthfeed = document.getElementById('fourthfeed-group')
   feedinginterval.onchange = () => {
-    let feedingintervallabel = document.getElementById('feedingintervallabel');
-    feedingintervallabel.innerHTML = "Feed Interval: " + feedinginterval.value + " hours";
+    switch (feedinginterval.value)
+    {
+        case "1":
+            show(firstfeed)
+            hide(secondfeed)
+            hide(thirdfeed)
+            hide(fourthfeed)
+            break;
+        case "2":
+            show(firstfeed)
+            show(secondfeed)
+            hide(thirdfeed)
+            hide(fourthfeed)
+            break;
+        case "3":
+            show(firstfeed)
+            show(secondfeed)
+            show(thirdfeed)
+            hide(fourthfeed)
+            break;
+        case "4":
+            show(firstfeed)
+            show(secondfeed)
+            show(thirdfeed)
+            show(fourthfeed)
+            break;
+        default:
+            hide(firstfeed)
+            hide(secondfeed)
+            hide(thirdfeed)
+            hide(fourthfeed)
+            break;
+    }
     updateConfig(feedinginterval)
   }
-
-  let feedingintervallabel = document.getElementById('feedingintervallabel');
-  feedingintervallabel.innerHTML = "Feed Interval: " + feedinginterval.value + " hours";
 
   // Feeding time
   const feedingtime  = document.getElementById('feedingtime')
@@ -986,6 +1091,40 @@ document.addEventListener('DOMContentLoaded', function (event) {
 
   let feedingtimelabel = document.getElementById('feedingtimelabel');
   feedingtimelabel.innerHTML = "Feed time: " + feedingtime.value + " seconds";
+
+    switch (feedinginterval.value)
+    {
+        case "1":
+            show(firstfeed)
+            hide(secondfeed)
+            hide(thirdfeed)
+            hide(fourthfeed)
+            break;
+        case "2":
+            show(firstfeed)
+            show(secondfeed)
+            hide(thirdfeed)
+            hide(fourthfeed)
+            break;
+        case "3":
+            show(firstfeed)
+            show(secondfeed)
+            show(thirdfeed)
+            hide(fourthfeed)
+            break;
+        case "4":
+            show(firstfeed)
+            show(secondfeed)
+            show(thirdfeed)
+            show(fourthfeed)
+            break;
+        default:
+            hide(firstfeed)
+            hide(secondfeed)
+            hide(thirdfeed)
+            hide(fourthfeed)
+            break;
+    }
 
   var x = setInterval(function() {
     // read feeder values

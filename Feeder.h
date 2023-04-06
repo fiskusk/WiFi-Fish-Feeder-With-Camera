@@ -18,15 +18,18 @@ public:
     void saveFeederCalendar();
 
     void setFeedingIntervalEnabled(bool enabled) { feedingIntervalEnabled = enabled; }
-    void setFeedInterval(unsigned long  interval) { feedInterval = interval; previousMillis = 0; }
+    void setFeedInterval(uint8_t interval) { feedInterval = interval; previousMillis = 0; }
     void setFeedingTime(unsigned long time) {feedingTime = time; }
     void setAutomaticFeedingLight(bool enabled) { automaticFeedingLight = enabled; }
     void setLightEnabled(bool enabled);
 
+    void setFirstFeedDateTime();
+    char* getFirstFeedDateTime();
+
     bool getAutomaticFeedingLight() { return automaticFeedingLight; }
     bool getLightEnabled() { return lightEnabled; }
     bool getFeedingIntervalEnabled() { return feedingIntervalEnabled; }
-    unsigned long getFeedingInterval() { return feedInterval; }
+    uint8_t getFeedingInterval() { return feedInterval; }
     unsigned long getFeedingTime() { return feedingTime; }
     char* getLastFeedingTime();
 
@@ -47,6 +50,8 @@ public:
     bool getFeedingOnFriday() { return feedOnFriday; }
     bool getFeedingOnSaturday() { return feedOnSaturday; }
     bool getFeedingOnSunday() { return feedOnSunday; }
+
+
     
 private:
     void feedingAnalogWrite(uint8_t channel, uint32_t value, uint32_t valueMax = 180);
@@ -59,7 +64,7 @@ private:
     unsigned long previousMillis;       // ms
     unsigned int feedingTime;           // s
     bool feedingIntervalEnabled;
-    unsigned long  feedInterval;        // ??? s
+    uint8_t feedInterval;        // ??? s
 
     bool feedEnable;
     unsigned long feedStartingTime;
@@ -77,4 +82,10 @@ private:
     bool feedOnFriday;
     bool feedOnSaturday;
     bool feedOnSunday;
+
+    char firstFeedDateTime[10];
+    char secondFeedDateTime[10];
+    char thirdFeedDateTime[10];
+    char fourthFeedDateTime[10];
+
 };

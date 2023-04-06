@@ -63,7 +63,8 @@ char* feederGetValues(char * p)
     p+=sprintf(p, "\"feedonthu\":%u,", feeder.getFeedingOnThursday() );
     p+=sprintf(p, "\"feedonfri\":%u,", feeder.getFeedingOnFriday() );
     p+=sprintf(p, "\"feedonsat\":%u,", feeder.getFeedingOnSaturday() );
-    p+=sprintf(p, "\"feedonsun\":%u", feeder.getFeedingOnSunday() );
+    p+=sprintf(p, "\"feedonsun\":%u,", feeder.getFeedingOnSunday() );
+    p+=sprintf(p, "\"firstfeed\":%s", "\"15:12:36\"" );
     return p;
 }
 

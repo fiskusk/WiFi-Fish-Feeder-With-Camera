@@ -4,11 +4,12 @@ void Feeder::init()
 {
     preferences.begin("feeder", false);
     // --- Start header changes for Fish Feeder ---
-    feedInterval = preferences.getULong("feedInterval", 12UL);
+    feedInterval = preferences.getUShort("feedInterval", 2);
     feedingTime = preferences.getUInt("feedingTime", 2);
     feedingIntervalEnabled = preferences.getBool("feedIntervalEn", true);
     lightEnabled = preferences.getBool("lightEnabled", false);
     automaticFeedingLight = preferences.getBool("autoFeedLight", true);
+    firstFeedDateTime = preferences.getString("firstFeed", "07:00:00");
     preferences.end();
 
     feederCalendar.begin("feederCalendar", false);
@@ -42,14 +43,14 @@ void Feeder::saveDefaults()
 {
     preferences.begin("feeder", false);
 
-    preferences.putULong("feedInterval", feedInterval);
+    preferences.putUShort("feedInterval", feedInterval);
     preferences.putUInt("feedingTime", feedingTime);
     preferences.putBool("feedIntervalEn", feedingIntervalEnabled);
     preferences.putBool("lightEnabled", lightEnabled);
     preferences.putBool("autoFeedLight", automaticFeedingLight);
 
     Serial.print("Stored feedInterval: ");
-    Serial.println(preferences.getULong("feedInterval") );
+    Serial.println(preferences.getUShort("feedInterval") );
     Serial.print("Stored feedingTime: ");
     Serial.println(preferences.getUInt("feedingTime") );
     Serial.print("Stored feedIntervalEn: ");
@@ -97,6 +98,13 @@ void Feeder::saveFeederCalendar()
     Serial.println("Current feeding calendar stored");
 
     feederCalendar.end();
+}
+
+char* Feeder::getFirstFeedDateTime()
+{
+    char* str = (char*)malloc(10 * sizeof(char));
+    strcpy(str, firstFeedDateTime);
+    return str;
 }
 
 char* Feeder::getLastFeedingTime()
