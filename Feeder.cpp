@@ -61,28 +61,23 @@ void Feeder::calculateTimeBetweenFeeding()
     
     if (feedInterval == 1) {
         Serial.println(lastFeedingTime);
-        //if (strcasecmp(lastFeedingTime, "Unknown") == 0) {
-            Serial.println("New Start - calculate feeding to closest time");
-            unsigned long timeNowMs = timeHhMmSsToMs(timeNow);
-            unsigned long firstFeedingMs = timeHhMmSsToMs(firstFeeding);
 
-            if (timeNowMs > firstFeedingMs) {
-                Serial.println("Next feeding tomorrow");
-                timeBetweenFeeding = 24UL*60UL*60UL*1000UL - timeNowMs + firstFeedingMs;
-            }
-            else if (timeNowMs < firstFeedingMs) {
-                Serial.println("Next feeding today");
-                timeBetweenFeeding = firstFeedingMs - timeNowMs;
-            }
-            else {
-                Serial.println("Feed now");
-                timeBetweenFeeding = 24UL*60UL*60UL*1000UL;
-            }
-        //}
-        //else {
-        //    Serial.println("Standart Interval");
-        //    timeBetweenFeeding = 24UL*60UL*60UL*1000UL;
-        //}
+        Serial.println("New Start - calculate feeding to closest time");
+        unsigned long timeNowMs = timeHhMmSsToMs(timeNow);
+        unsigned long firstFeedingMs = timeHhMmSsToMs(firstFeeding);
+
+        if (timeNowMs > firstFeedingMs) {
+            Serial.println("Next feeding tomorrow");
+            timeBetweenFeeding = 24UL*60UL*60UL*1000UL - timeNowMs + firstFeedingMs;
+        }
+        else if (timeNowMs < firstFeedingMs) {
+            Serial.println("Next feeding today");
+            timeBetweenFeeding = firstFeedingMs - timeNowMs;
+        }
+        else {
+            Serial.println("Feeding now");
+            timeBetweenFeeding = 24UL*60UL*60UL*1000UL;
+        }
     }
 
     Serial.print("Time calculated between the closest feeding is: ");
