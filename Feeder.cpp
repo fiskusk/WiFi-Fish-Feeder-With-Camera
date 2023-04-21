@@ -45,39 +45,101 @@ void Feeder::init()
 
 void Feeder::calculateTimeBetweenFeeding()
 {
+    Serial.println("");
+    Serial.println("Calculation of the time of the next feeding");
     struct tm timeNow;
     char timeStringBuff[256];
     if(!getLocalTime(&timeNow, 10)){
       Serial.println("Failed to obtain time");
     }
     previousMillis = millis()-10;
+    unsigned long timeNowMs = timeHhMmSsToMs(timeNow);
     struct tm  firstFeeding = parseTimeString(firstFeedDateTime);
-    if (feedInterval >= 2)
-        struct tm secondFeeding = parseTimeString(secondFeedDateTime);
-    if (feedInterval >= 3)
-        struct tm thirdFeeding = parseTimeString(thirdFeedDateTime);
-    if (feedInterval == 4)
-        struct tm fourthFeeding = parseTimeString(fourthFeedDateTime);
+    unsigned long firstFeedingMs = timeHhMmSsToMs(firstFeeding);
     
     if (feedInterval == 1) {
-        Serial.println(lastFeedingTime);
-
-        Serial.println("New Start - calculate feeding to closest time");
-        unsigned long timeNowMs = timeHhMmSsToMs(timeNow);
-        unsigned long firstFeedingMs = timeHhMmSsToMs(firstFeeding);
-
-        if (timeNowMs > firstFeedingMs) {
-            Serial.println("Next feeding tomorrow");
-            timeBetweenFeeding = 24UL*60UL*60UL*1000UL - timeNowMs + firstFeedingMs;
-        }
-        else if (timeNowMs < firstFeedingMs) {
-            Serial.println("Next feeding today");
+        if (timeNowMs < firstFeedingMs) {
+            Serial.println("This will be the first feeding of the day");
             timeBetweenFeeding = firstFeedingMs - timeNowMs;
         }
-        else {
-            Serial.println("Feeding now");
-            timeBetweenFeeding = 24UL*60UL*60UL*1000UL;
+        else if (timeNowMs >= firstFeedingMs) {
+            Serial.println("Next feeding will be tomorrow");
+            timeBetweenFeeding = 24UL*60UL*60UL*1000UL - timeNowMs + firstFeedingMs;
         }
+    }
+    else if (feedInterval == 2) {
+        struct tm secondFeeding = parseTimeString(secondFeedDateTime);
+        unsigned long secondFeedingMs = timeHhMmSsToMs(secondFeeding);
+
+        if (timeNowMs < firstFeedingMs) {
+            Serial.println("This will be the first feeding of the day");
+            timeBetweenFeeding = firstFeedingMs - timeNowMs;
+        }
+        else if (timeNowMs >= firstFeedingMs && timeNowMs < secondFeedingMs) {
+            Serial.println("This will be the second feeding of the day");
+            timeBetweenFeeding = secondFeedingMs - timeNowMs;
+        }
+        else {
+            Serial.println("Next feeding will be tomorrow");
+            timeBetweenFeeding = 24UL*60UL*60UL*1000UL - timeNowMs + firstFeedingMs;
+        }
+    }
+    else if (feedInterval == 3) {
+        struct tm secondFeeding = parseTimeString(secondFeedDateTime);
+        struct tm thirdFeeding = parseTimeString(thirdFeedDateTime);
+
+        unsigned long secondFeedingMs = timeHhMmSsToMs(secondFeeding);
+        unsigned long thirdFeedingMs = timeHhMmSsToMs(thirdFeeding);
+
+        if (timeNowMs < firstFeedingMs && timeNowMs < secondFeedingMs && timeNowMs < thirdFeedingMs) {
+            Serial.println("This will be the first feeding of the day");
+            timeBetweenFeeding = firstFeedingMs - timeNowMs;
+        }
+        else if (timeNowMs >= firstFeedingMs && timeNowMs < secondFeedingMs && timeNowMs < thirdFeedingMs) {
+            Serial.println("This will be the second feeding of the day");
+            timeBetweenFeeding = secondFeedingMs - timeNowMs;
+        }
+        else if (timeNowMs > firstFeedingMs && timeNowMs >= secondFeedingMs && timeNowMs < thirdFeedingMs) {
+            Serial.println("This will be the third feeding of the day");
+            timeBetweenFeeding = thirdFeedingMs - timeNowMs;
+        }
+        else {
+            Serial.println("Next feeding will be tomorrow");
+            timeBetweenFeeding = 24UL*60UL*60UL*1000UL - timeNowMs + firstFeedingMs;
+        }
+    }
+    else if (feedInterval == 4) {
+        struct tm secondFeeding = parseTimeString(secondFeedDateTime);
+        struct tm thirdFeeding = parseTimeString(thirdFeedDateTime);
+        struct tm fourthFeeding = parseTimeString(fourthFeedDateTime);
+
+        unsigned long secondFeedingMs = timeHhMmSsToMs(secondFeeding);
+        unsigned long thirdFeedingMs = timeHhMmSsToMs(thirdFeeding);
+        unsigned long fourthFeedingMs = timeHhMmSsToMs(fourthFeeding);
+
+        if (timeNowMs < firstFeedingMs && timeNowMs < secondFeedingMs && timeNowMs < thirdFeedingMs && timeNowMs < fourthFeedingMs) {
+            Serial.println("This will be the first feeding of the day");
+            timeBetweenFeeding = firstFeedingMs - timeNowMs;
+        }
+        else if (timeNowMs >= firstFeedingMs && timeNowMs < secondFeedingMs && timeNowMs < thirdFeedingMs && timeNowMs < fourthFeedingMs) {
+            Serial.println("This will be the second feeding of the day");
+            timeBetweenFeeding = secondFeedingMs - timeNowMs;
+        }
+        else if (timeNowMs > firstFeedingMs && timeNowMs >= secondFeedingMs && timeNowMs < thirdFeedingMs && timeNowMs < fourthFeedingMs) {
+            Serial.println("This will be the third feeding of the day");
+            timeBetweenFeeding = thirdFeedingMs - timeNowMs;
+        }
+        else if (timeNowMs > firstFeedingMs && timeNowMs > secondFeedingMs && timeNowMs >= thirdFeedingMs && timeNowMs < fourthFeedingMs) {
+            Serial.println("This will be the fourth feeding of the day");
+            timeBetweenFeeding = fourthFeedingMs - timeNowMs;
+        }
+        else {
+            Serial.println("Next feeding will be tomorrow");
+            timeBetweenFeeding = 24UL*60UL*60UL*1000UL - timeNowMs + firstFeedingMs;
+        }
+    }
+    else {
+        Serial.println("Bad feedInterval!!! Internal Error!!!!");
     }
 
     Serial.print("Time calculated between the closest feeding is: ");
@@ -201,49 +263,47 @@ void Feeder::checkFeederTimer(unsigned long time)
     if (!feedingIntervalEnabled)
         return;
 
-    if (feedInterval == 1) {
-        if (time - previousMillis > timeBetweenFeeding ) {
-            Serial.print("time: ");
-            Serial.println(time);
-            Serial.print("previousMillis: ");
-            Serial.println(previousMillis);
-            //previousMillis = millis();
-            calculateTimeBetweenFeeding();
+    if (time - previousMillis > timeBetweenFeeding ) {
+        Serial.print("time: ");
+        Serial.println(time);
+        Serial.print("previousMillis: ");
+        Serial.println(previousMillis);
+        //previousMillis = millis();
+        calculateTimeBetweenFeeding();
 
-            if (feedCalendarEnabled) {
-                struct tm timeinfo;
-                if(!getLocalTime(&timeinfo, 10)){
-                    Serial.println("Failed to obtain time");
-                }
-                switch (timeinfo.tm_wday) {
-                    case 0:
-                        if (!feedOnSunday) return;
-                        break;
-                    case 1:
-                        if (!feedOnMonday) return;
-                        break;
-                    case 2:
-                        if (!feedOnTuesday) return;
-                        break;
-                    case 3:
-                        if (!feedOnWednesday) return;
-                        break;
-                    case 4:
-                        if (!feedOnThursday) return;
-                        break;
-                    case 5:
-                        if (!feedOnFriday) return;
-                        break;
-                    case 6:
-                        if (!feedOnSaturday) return;
-                        break;
-                    default:
-                        break;
-                }
+        if (feedCalendarEnabled) {
+            struct tm timeinfo;
+            if(!getLocalTime(&timeinfo, 10)){
+                Serial.println("Failed to obtain time");
             }
-            Serial.println("Feeder timer activated.");
-            startFeeding(time);
-        }  
+            switch (timeinfo.tm_wday) {
+                case 0:
+                    if (!feedOnSunday) return;
+                    break;
+                case 1:
+                    if (!feedOnMonday) return;
+                    break;
+                case 2:
+                    if (!feedOnTuesday) return;
+                    break;
+                case 3:
+                    if (!feedOnWednesday) return;
+                    break;
+                case 4:
+                    if (!feedOnThursday) return;
+                    break;
+                case 5:
+                    if (!feedOnFriday) return;
+                    break;
+                case 6:
+                    if (!feedOnSaturday) return;
+                    break;
+                default:
+                    break;
+            }
+        }
+        Serial.println("Feeder timer activated.");
+        startFeeding(time);
     }
 }
 

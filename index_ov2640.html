@@ -629,7 +629,7 @@
                             <div class="output-group" id="localtime-group">
                                 <label for="actuallocaltime" id="localtimelabel">Actual Time:</label>
                                 <div class="switch">
-                                    <label for="time" id="localTime" type="label" class="feeder-action"></label>
+                                    <label for="time" id="localTime" type="label" class="time-action"></label>
                                 </div>
                             </div>
                             <div class="output-group" id="lastfeedingtime-group">
@@ -961,13 +961,13 @@ document.addEventListener('DOMContentLoaded', function (event) {
     })
 
   // read feeder values
-  fetch(`${baseHost}/feeder`)
+  fetch(`${baseHost}/time`)
     .then(function (response) {
       return response.json()
     })
     .then(function (state) {
       document 
-        .querySelectorAll('.feeder-action')
+        .querySelectorAll('.time-action')
         .forEach(el => {
           updateValue(el, state[el.id], false)
         })
@@ -1085,8 +1085,20 @@ document.addEventListener('DOMContentLoaded', function (event) {
   }
 
   const firstfeedtime = document.getElementById('firstfeed')
+  const secondfeedtime = document.getElementById('secondfeed')
+  const thirdfeedtime = document.getElementById('thirdfeed')
+  const fourthfeedtime = document.getElementById('fourthfeed')
   firstfeedtime.onchange = () => {
     updateConfig(firstfeedtime)
+  }
+  secondfeedtime.onchange = () => {
+    updateConfig(secondfeedtime)
+  }
+  thirdfeedtime.onchange = () => {
+    updateConfig(thirdfeedtime)
+  }
+  fourthfeedtime.onchange = () => {
+    updateConfig(fourthfeedtime)
   }
 
   // Feeding time
@@ -1136,13 +1148,13 @@ document.addEventListener('DOMContentLoaded', function (event) {
 
   var x = setInterval(function() {
     // read feeder values
-  fetch(`${baseHost}/feeder`)
+  fetch(`${baseHost}/time`)
     .then(function (response) {
       return response.json()
     })
     .then(function (state) {
       document 
-        .querySelectorAll('.feeder-action')
+        .querySelectorAll('.time-action')
         .forEach(el => {
           updateValue(el, state[el.id], false)
         })

@@ -610,7 +610,7 @@ static esp_err_t status_handler(httpd_req_t *req)
     return httpd_resp_send(req, json_response, strlen(json_response));
 }
 
-static esp_err_t feeder_handler(httpd_req_t *req)
+static esp_err_t time_handler(httpd_req_t *req)
 {
     static char json_response[1024];
 
@@ -683,10 +683,10 @@ void startCameraServer()
         .user_ctx  = NULL
     };
 
-    httpd_uri_t feeder_uri = {
-        .uri       = "/feeder",
+    httpd_uri_t time_uri = {
+        .uri       = "/time",
         .method    = HTTP_GET,
-        .handler   = feeder_handler,
+        .handler   = time_handler,
         .user_ctx  = NULL
     };
 
@@ -711,7 +711,7 @@ void startCameraServer()
         httpd_register_uri_handler(camera_httpd, &cmd_uri);
         httpd_register_uri_handler(camera_httpd, &status_uri);
         httpd_register_uri_handler(camera_httpd, &capture_uri);
-        httpd_register_uri_handler(camera_httpd, &feeder_uri);
+        httpd_register_uri_handler(camera_httpd, &time_uri);
     }
 
     config.server_port += 1;

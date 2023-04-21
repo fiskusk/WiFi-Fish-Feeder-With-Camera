@@ -24,9 +24,9 @@ public:
     void setLightEnabled(bool enabled);
 
     void setFirstFeedDateTime(String firstFeed) { firstFeedDateTime = firstFeed; calculateTimeBetweenFeeding(); }
-    void setSecondFeedDateTime(String secondFeed) { secondFeedDateTime = secondFeed; }
-    void setThirdFeedDateTime(String thirdFeed) { thirdFeedDateTime = thirdFeed; }
-    void setFourthFeedDateTime(String fourtFeed) { fourthFeedDateTime = fourtFeed; }
+    void setSecondFeedDateTime(String secondFeed) { secondFeedDateTime = secondFeed; calculateTimeBetweenFeeding(); }
+    void setThirdFeedDateTime(String thirdFeed) { thirdFeedDateTime = thirdFeed; calculateTimeBetweenFeeding(); }
+    void setFourthFeedDateTime(String fourthFeed) { fourthFeedDateTime = fourthFeed; calculateTimeBetweenFeeding(); }
 
     String getFirstFeedDateTime() { return firstFeedDateTime; };
     String getSecondFeedDateTime() { return secondFeedDateTime; };
