@@ -31,7 +31,6 @@ const char* ntpServer = "pool.ntp.org";
 const long  gmtOffset_sec = 0; // 1 * 60 * 60;
 const int   daylightOffset_sec = 0; // 3600;
 
-command_t event = {None, 0};
 bool wifiConnected = false;
 unsigned long wifiReconnectionStartTime = 0;
 const uint32_t wifiReconnectionDelay = 10000;
@@ -64,106 +63,112 @@ char* feederGetValues(char * p)
     p+=sprintf(p, "\"feedonfri\":%u,", feeder.getFeedingOnFriday() );
     p+=sprintf(p, "\"feedonsat\":%u,", feeder.getFeedingOnSaturday() );
     p+=sprintf(p, "\"feedonsun\":%u,", feeder.getFeedingOnSunday() );
-    p+=sprintf(p, "\"firstfeed\":%s", "\"15:12:36\"" );
+    p+=sprintf(p, "\"firstfeed\":\"%s\",", feeder.getFirstFeedDateTime() );
+    p+=sprintf(p, "\"secondfeed\":\"%s\",", feeder.getSecondFeedDateTime() );
+    p+=sprintf(p, "\"thirdfeed\":\"%s\",", feeder.getThirdFeedDateTime() );
+    p+=sprintf(p, "\"fourthfeed\":\"%s\"", feeder.getFourthFeedDateTime() );
     return p;
 }
 
-void feederCheckCommand()
+void feederCheckCommand(command_t event)
 {
     switch (event.command) {
         case RunFishFeeder:
             feeder.startFeeding(millis());
-            event.command = None;
             break;
         case FeedingIntervalEnabled:
             Serial.print("Feeding interval is: ");
-            event.value ? Serial.println("ENABLED") : Serial.println("DISABLED");
-            feeder.setFeedingIntervalEnabled(event.value);
-            event.command = None;
+            event.valueInt ? Serial.println("ENABLED") : Serial.println("DISABLED");
+            feeder.setFeedingIntervalEnabled(event.valueInt);
             break;
         case SetFeedingInterval:
             Serial.print("Feeding interval changed to: ");
-            Serial.println(event.value);
-            feeder.setFeedInterval(event.value);
-            event.command = None;
+            Serial.println(event.valueInt);
+            feeder.setFeedInterval(event.valueInt);
             break;
         case SetFeedingTime:
             Serial.print("Feeding time (seconds) changed to: ");
-            Serial.println(event.value);
-            feeder.setFeedingTime(event.value);
-            event.command = None;
+            Serial.println(event.valueInt);
+            feeder.setFeedingTime(event.valueInt);
             break;
         case SetLight:
             Serial.print("Feeding light is ");
-            event.value ? Serial.println("ON") : Serial.println("OFF");
-            feeder.setLightEnabled(event.value);
-            event.command = None;
+            event.valueInt ? Serial.println("ON") : Serial.println("OFF");
+            feeder.setLightEnabled(event.valueInt);
             break;
         case SetAutomaticLight:
             Serial.print("Automatic light when feeding changed to: ");
-            event.value ? Serial.println("ON") : Serial.println("OFF");
-            feeder.setAutomaticFeedingLight(event.value);
-            event.command = None;
+            event.valueInt ? Serial.println("ON") : Serial.println("OFF");
+            feeder.setAutomaticFeedingLight(event.valueInt);
+            break;
+        case SetFirstFeed:
+            Serial.print("First feeding time changed to: ");
+            feeder.setFirstFeedDateTime(event.valueString);
+            Serial.println(feeder.getFirstFeedDateTime());
+            break;
+        case SetSecondFeed:
+            Serial.print("Second feeding time changed to: ");
+            feeder.setSecondFeedDateTime(event.valueString);
+            Serial.println(feeder.getSecondFeedDateTime());
+            break;
+        case SetThirdFeed:
+            Serial.print("Third feeding time changed to: ");
+            feeder.setThirdFeedDateTime(event.valueString);
+            Serial.println(feeder.getThirdFeedDateTime());
+            break;
+        case SetFourthFeed:
+            Serial.print("Fourth feeding time changed to: ");
+            feeder.setFourthFeedDateTime(event.valueString);
+            Serial.println(feeder.getFourthFeedDateTime());
             break;
         case SaveFeederSettings:
             feeder.saveDefaults();
-            event.command = None;
             break;
         case SaveFeederCalendar:
             feeder.saveFeederCalendar();
-            event.command = None;
             break;
         case SetFeederCalendarEnabled:
             Serial.print("Feeding Calendar is ");
-            event.value ? Serial.println("ENABLED") : Serial.println("DISABLED");
-            feeder.setFeedingCalendarEnabled(event.value);
-            event.command = None;
+            event.valueInt ? Serial.println("ENABLED") : Serial.println("DISABLED");
+            feeder.setFeedingCalendarEnabled(event.valueInt);
             break;
         case SetFeedOnMonday:
             Serial.print("Feeding on Monday is ");
-            event.value ? Serial.println("ON") : Serial.println("OFF");
-            feeder.setFeedingOnMonday(event.value);
-            event.command = None;
+            event.valueInt ? Serial.println("ON") : Serial.println("OFF");
+            feeder.setFeedingOnMonday(event.valueInt);
             break;
         case SetFeedOnTuesday:
             Serial.print("Feeding on Thuesday is ");
-            event.value ? Serial.println("ON") : Serial.println("OFF");
-            feeder.setFeedingOnTuesday(event.value);
-            event.command = None;
+            event.valueInt ? Serial.println("ON") : Serial.println("OFF");
+            feeder.setFeedingOnTuesday(event.valueInt);
             break;
         case SetFeedOnWednesday:
             Serial.print("Feeding on Wednesday is ");
-            event.value ? Serial.println("ON") : Serial.println("OFF");
-            feeder.setFeedingOnWednesday(event.value);
-            event.command = None;
+            event.valueInt ? Serial.println("ON") : Serial.println("OFF");
+            feeder.setFeedingOnWednesday(event.valueInt);
             break;
         case SetFeedOnThursday:
             Serial.print("Feeding on Thursday is ");
-            event.value ? Serial.println("ON") : Serial.println("OFF");
-            feeder.setFeedingOnThursday(event.value);
-            event.command = None;
+            event.valueInt ? Serial.println("ON") : Serial.println("OFF");
+            feeder.setFeedingOnThursday(event.valueInt);
             break;
         case SetFeedOnFriday:
             Serial.print("Feeding on Friday is ");
-            event.value ? Serial.println("ON") : Serial.println("OFF");
-            feeder.setFeedingOnFriday(event.value);
-            event.command = None;
+            event.valueInt ? Serial.println("ON") : Serial.println("OFF");
+            feeder.setFeedingOnFriday(event.valueInt);
             break;
         case SetFeedOnSaturday:
             Serial.print("Feeding on Saturday is ");
-            event.value ? Serial.println("ON") : Serial.println("OFF");
-            feeder.setFeedingOnSaturday(event.value);
-            event.command = None;
+            event.valueInt ? Serial.println("ON") : Serial.println("OFF");
+            feeder.setFeedingOnSaturday(event.valueInt);
             break;
         case SetFeedOnSunday:
             Serial.print("Feeding on Sunday is ");
-            event.value ? Serial.println("ON") : Serial.println("OFF");
-            feeder.setFeedingOnSunday(event.value);
-            event.command = None;
+            event.valueInt ? Serial.println("ON") : Serial.println("OFF");
+            feeder.setFeedingOnSunday(event.valueInt);
             break;
         default:
             led.blink(50, 200, 50);
-            event.command = None;
             break;
     }
     led.blink(500);

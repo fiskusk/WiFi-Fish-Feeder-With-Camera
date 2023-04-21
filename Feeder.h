@@ -18,13 +18,20 @@ public:
     void saveFeederCalendar();
 
     void setFeedingIntervalEnabled(bool enabled) { feedingIntervalEnabled = enabled; }
-    void setFeedInterval(uint8_t interval) { feedInterval = interval; previousMillis = 0; }
+    void setFeedInterval(uint8_t interval) { feedInterval = interval; }
     void setFeedingTime(unsigned long time) {feedingTime = time; }
     void setAutomaticFeedingLight(bool enabled) { automaticFeedingLight = enabled; }
     void setLightEnabled(bool enabled);
 
-    void setFirstFeedDateTime();
-    char* getFirstFeedDateTime();
+    void setFirstFeedDateTime(String firstFeed) { firstFeedDateTime = firstFeed; calculateTimeBetweenFeeding(); }
+    void setSecondFeedDateTime(String secondFeed) { secondFeedDateTime = secondFeed; }
+    void setThirdFeedDateTime(String thirdFeed) { thirdFeedDateTime = thirdFeed; }
+    void setFourthFeedDateTime(String fourtFeed) { fourthFeedDateTime = fourtFeed; }
+
+    String getFirstFeedDateTime() { return firstFeedDateTime; };
+    String getSecondFeedDateTime() { return secondFeedDateTime; };
+    String getThirdFeedDateTime() { return thirdFeedDateTime; };
+    String getFourthFeedDateTime() { return fourthFeedDateTime; };
 
     bool getAutomaticFeedingLight() { return automaticFeedingLight; }
     bool getLightEnabled() { return lightEnabled; }
@@ -57,11 +64,15 @@ private:
     void feedingAnalogWrite(uint8_t channel, uint32_t value, uint32_t valueMax = 180);
     void runFeeder(unsigned long time);
     void checkFeederTimer(unsigned long time);
+    void calculateTimeBetweenFeeding();
+    tm parseTimeString(String string);
+    unsigned long timeHhMmSsToMs(tm time);
 
 private:
     Preferences preferences;
     Preferences feederCalendar;
     unsigned long previousMillis;       // ms
+    unsigned long timeBetweenFeeding;       // ms
     unsigned int feedingTime;           // s
     bool feedingIntervalEnabled;
     uint8_t feedInterval;        // ??? s
@@ -83,9 +94,9 @@ private:
     bool feedOnSaturday;
     bool feedOnSunday;
 
-    char firstFeedDateTime[10];
-    char secondFeedDateTime[10];
-    char thirdFeedDateTime[10];
-    char fourthFeedDateTime[10];
+    String firstFeedDateTime;
+    String secondFeedDateTime;
+    String thirdFeedDateTime;
+    String fourthFeedDateTime;
 
 };

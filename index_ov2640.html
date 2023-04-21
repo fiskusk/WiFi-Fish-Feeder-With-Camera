@@ -924,6 +924,9 @@ document.addEventListener('DOMContentLoaded', function (event) {
       case 'submit':
         value = '1'
         break
+      case 'time':
+        value = el.value
+        break
       default:
         return
     }
@@ -1079,6 +1082,11 @@ document.addEventListener('DOMContentLoaded', function (event) {
             break;
     }
     updateConfig(feedinginterval)
+  }
+
+  const firstfeedtime = document.getElementById('firstfeed')
+  firstfeedtime.onchange = () => {
+    updateConfig(firstfeedtime)
   }
 
   // Feeding time

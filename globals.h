@@ -10,6 +10,10 @@ enum CommandType {
     SaveFeederSettings,
     SaveFeederCalendar,
     SetFeederCalendarEnabled,
+    SetFirstFeed,
+    SetSecondFeed,
+    SetThirdFeed,
+    SetFourthFeed,
     SetFeedOnMonday,
     SetFeedOnTuesday,
     SetFeedOnWednesday,
@@ -22,10 +26,9 @@ enum CommandType {
 
 typedef struct {
         CommandType command; 
-        int value;
+        int valueInt;
+        String valueString;
 } command_t;
 
-extern command_t event; // TODO remove this global variable and move it inside checkCommnad function
-
-extern void feederCheckCommand();
+extern void feederCheckCommand(command_t event);
 extern char* feederGetValues(char * p);

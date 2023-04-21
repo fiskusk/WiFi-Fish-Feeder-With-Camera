@@ -10,6 +10,9 @@ void Feeder::init()
     lightEnabled = preferences.getBool("lightEnabled", false);
     automaticFeedingLight = preferences.getBool("autoFeedLight", true);
     firstFeedDateTime = preferences.getString("firstFeed", "07:00:00");
+    secondFeedDateTime = preferences.getString("secondFeed", "19:00:00");
+    thirdFeedDateTime = preferences.getString("thirdFeed", "12:00:00");
+    fourthFeedDateTime = preferences.getString("fourthFeed", "17:00:00");
     preferences.end();
 
     feederCalendar.begin("feederCalendar", false);
@@ -23,11 +26,12 @@ void Feeder::init()
     feedOnSunday = feederCalendar.getBool("feedOnSun", true);
     feederCalendar.end();
 
-    previousMillis =    0;   // ms
+    strcpy(lastFeedingTime, "Unknown");
+
+    //previousMillis = 0;   // ms
+    calculateTimeBetweenFeeding();
     feedEnable = false;
     feedStartingTime = 0;
-
-    strcpy(lastFeedingTime, "Unknown");
 
     // Feeder onboard Light
     pinMode(PWR_LED_NUM, OUTPUT);
@@ -39,6 +43,83 @@ void Feeder::init()
     ledcAttachPin(SERVO_NUM, SERVO_CHANNEL);  // pin, channel    
 }
 
+void Feeder::calculateTimeBetweenFeeding()
+{
+    struct tm timeNow;
+    char timeStringBuff[256];
+    if(!getLocalTime(&timeNow, 10)){
+      Serial.println("Failed to obtain time");
+    }
+    previousMillis = millis()-10;
+    struct tm  firstFeeding = parseTimeString(firstFeedDateTime);
+    if (feedInterval >= 2)
+        struct tm secondFeeding = parseTimeString(secondFeedDateTime);
+    if (feedInterval >= 3)
+        struct tm thirdFeeding = parseTimeString(thirdFeedDateTime);
+    if (feedInterval == 4)
+        struct tm fourthFeeding = parseTimeString(fourthFeedDateTime);
+    
+    if (feedInterval == 1) {
+        Serial.println(lastFeedingTime);
+        //if (strcasecmp(lastFeedingTime, "Unknown") == 0) {
+            Serial.println("New Start - calculate feeding to closest time");
+            unsigned long timeNowMs = timeHhMmSsToMs(timeNow);
+            unsigned long firstFeedingMs = timeHhMmSsToMs(firstFeeding);
+
+            if (timeNowMs > firstFeedingMs) {
+                Serial.println("Next feeding tomorrow");
+                timeBetweenFeeding = 24UL*60UL*60UL*1000UL - timeNowMs + firstFeedingMs;
+            }
+            else if (timeNowMs < firstFeedingMs) {
+                Serial.println("Next feeding today");
+                timeBetweenFeeding = firstFeedingMs - timeNowMs;
+            }
+            else {
+                Serial.println("Feed now");
+                timeBetweenFeeding = 24UL*60UL*60UL*1000UL;
+            }
+        //}
+        //else {
+        //    Serial.println("Standart Interval");
+        //    timeBetweenFeeding = 24UL*60UL*60UL*1000UL;
+        //}
+    }
+
+    Serial.print("Time calculated between the closest feeding is: ");
+    Serial.print(timeBetweenFeeding);
+    Serial.println(" ms");
+    /*
+    if (timeNow.tm_hour < firstFeeding.tm_hour)
+        // her will be calculation for time of first time minus time now
+    else if (timeinfo.tm_hour <)
+    */
+}
+
+tm Feeder::parseTimeString(String string)
+{
+    struct tm time;
+
+    char *charBuffer = new char[string.length() + 1];
+    string.toCharArray(charBuffer, string.length() + 1);
+
+    char *token = strtok(charBuffer, ":");
+    time.tm_hour = atoi(token);
+    token = strtok(NULL, ":");
+    time.tm_min = atoi(token);
+    token = strtok(NULL, ":");
+    time.tm_sec = atoi(token);
+
+    Serial.print("Parsed string: ");
+    Serial.println(&time, "%H:%M:%S");
+
+    return time;
+}
+
+unsigned long Feeder::timeHhMmSsToMs(tm time)
+{
+    return time.tm_hour*60UL*60*1000UL + time.tm_min*60UL*1000UL + time.tm_sec*1000UL;
+}
+
 void Feeder::saveDefaults()
 {
     preferences.begin("feeder", false);
@@ -48,6 +129,10 @@ void Feeder::saveDefaults()
     preferences.putBool("feedIntervalEn", feedingIntervalEnabled);
     preferences.putBool("lightEnabled", lightEnabled);
     preferences.putBool("autoFeedLight", automaticFeedingLight);
+    preferences.putString("firstFeed", firstFeedDateTime);
+    preferences.putString("secondFeed", secondFeedDateTime);
+    preferences.putString("thirdFeed", thirdFeedDateTime);
+    preferences.putString("fourthFeed", fourthFeedDateTime);
 
     Serial.print("Stored feedInterval: ");
     Serial.println(preferences.getUShort("feedInterval") );
@@ -59,6 +144,15 @@ void Feeder::saveDefaults()
     Serial.println(preferences.getBool("lightEnabled") );
     Serial.print("Stored autoFeedLight: ");
     Serial.println(preferences.getBool("autoFeedLight") );
+
+    Serial.print("Stored firstFeedDateTime: ");
+    Serial.println(preferences.getString("firstFeed") );
+    Serial.print("Stored secondFeedDateTime: ");
+    Serial.println(preferences.getString("secondFeed") );
+    Serial.print("Stored thirdFeedDateTime: ");
+    Serial.println(preferences.getString("thirdFeed") );
+    Serial.print("Stored fourthFeedDateTime: ");
+    Serial.println(preferences.getString("fourthFeed") );
 
     Serial.println("Current feeding settings saved");
 
@@ -100,13 +194,6 @@ void Feeder::saveFeederCalendar()
     feederCalendar.end();
 }
 
-char* Feeder::getFirstFeedDateTime()
-{
-    char* str = (char*)malloc(10 * sizeof(char));
-    strcpy(str, firstFeedDateTime);
-    return str;
-}
-
 char* Feeder::getLastFeedingTime()
 {
     char* str = (char*)malloc(256 * sizeof(char));
@@ -119,43 +206,50 @@ void Feeder::checkFeederTimer(unsigned long time)
     if (!feedingIntervalEnabled)
         return;
 
-    if (time - previousMillis >= feedInterval*60UL*60UL*1000UL) {
-        previousMillis += feedInterval*60UL*60UL*1000UL;
+    if (feedInterval == 1) {
+        if (time - previousMillis > timeBetweenFeeding ) {
+            Serial.print("time: ");
+            Serial.println(time);
+            Serial.print("previousMillis: ");
+            Serial.println(previousMillis);
+            //previousMillis = millis();
+            calculateTimeBetweenFeeding();
 
-        if (feedCalendarEnabled) {
-            struct tm timeinfo;
-            if(!getLocalTime(&timeinfo, 10)){
-                Serial.println("Failed to obtain time");
+            if (feedCalendarEnabled) {
+                struct tm timeinfo;
+                if(!getLocalTime(&timeinfo, 10)){
+                    Serial.println("Failed to obtain time");
+                }
+                switch (timeinfo.tm_wday) {
+                    case 0:
+                        if (!feedOnSunday) return;
+                        break;
+                    case 1:
+                        if (!feedOnMonday) return;
+                        break;
+                    case 2:
+                        if (!feedOnTuesday) return;
+                        break;
+                    case 3:
+                        if (!feedOnWednesday) return;
+                        break;
+                    case 4:
+                        if (!feedOnThursday) return;
+                        break;
+                    case 5:
+                        if (!feedOnFriday) return;
+                        break;
+                    case 6:
+                        if (!feedOnSaturday) return;
+                        break;
+                    default:
+                        break;
+                }
             }
-            switch (timeinfo.tm_wday) {
-                case 0:
-                    if (!feedOnSunday) return;
-                    break;
-                case 1:
-                    if (!feedOnMonday) return;
-                    break;
-                case 2:
-                    if (!feedOnTuesday) return;
-                    break;
-                case 3:
-                    if (!feedOnWednesday) return;
-                    break;
-                case 4:
-                    if (!feedOnThursday) return;
-                    break;
-                case 5:
-                    if (!feedOnFriday) return;
-                    break;
-                case 6:
-                    if (!feedOnSaturday) return;
-                    break;
-                default:
-                    break;
-            }
-        }
-        Serial.println("Feeder timer activated.");
-        startFeeding(time);
-    }  
+            Serial.println("Feeder timer activated.");
+            startFeeding(time);
+        }  
+    }
 }
 
 void Feeder::startFeeding(unsigned long time)
@@ -169,8 +263,7 @@ void Feeder::startFeeding(unsigned long time)
     //else{
     //    //Serial.println(&timeinfo, "%A, %d.%B %Y %H:%M:%S");   
     //}
-    strftime(timeStringBuff, sizeof(timeStringBuff), "%a, %d.%b %Y %H:%M:%S", &timeinfo); 
-
+    strftime(timeStringBuff, sizeof(timeStringBuff), "%a, %d.%b %Y %H:%M:%S", &timeinfo);
     memcpy(lastFeedingTime, timeStringBuff, sizeof(timeStringBuff));
 
     Serial.print("Start feeding the fish for ");

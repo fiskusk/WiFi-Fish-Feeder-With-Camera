@@ -463,6 +463,7 @@ static esp_err_t cmd_handler(httpd_req_t *req)
     size_t buf_len;
     char variable[32] = {0,};
     char value[32] = {0,};
+    command_t event = {CommandType::None, 0, "" };
 
     buf_len = httpd_req_get_url_query_len(req) + 1;
     if (buf_len > 1) {
@@ -533,25 +534,29 @@ static esp_err_t cmd_handler(httpd_req_t *req)
             detection_enabled = val;
         }
     }
-    else if (!strcmp(variable, "fishfeeder")) event = {CommandType::RunFishFeeder, 1};
-    else if (!strcmp(variable, "feedingintervalenabled")) event = {CommandType::FeedingIntervalEnabled, val};
-    else if (!strcmp(variable, "lightenabled")) event = {CommandType::SetLight, val};
-    else if (!strcmp(variable, "feedinginterval")) event = {CommandType::SetFeedingInterval, val};
-    else if (!strcmp(variable, "feedingtime")) event = {CommandType::SetFeedingTime, val};
-    else if (!strcmp(variable, "autolight")) event = {CommandType::SetAutomaticLight, val};
-    else if (!strcmp(variable, "savefeedersettings")) event = {CommandType::SaveFeederSettings, 1};
-    else if (!strcmp(variable, "savefeedercalendar")) event = {CommandType::SaveFeederCalendar, 1};
-    else if (!strcmp(variable, "feedercalendarenable")) event = {CommandType::SetFeederCalendarEnabled, val};
-    else if (!strcmp(variable, "feedonmon")) event = {CommandType::SetFeedOnMonday, val};
-    else if (!strcmp(variable, "feedontue")) event = {CommandType::SetFeedOnTuesday, val};
-    else if (!strcmp(variable, "feedonwed")) event = {CommandType::SetFeedOnWednesday, val};
-    else if (!strcmp(variable, "feedonthu")) event = {CommandType::SetFeedOnThursday, val};
-    else if (!strcmp(variable, "feedonfri")) event = {CommandType::SetFeedOnFriday, val};
-    else if (!strcmp(variable, "feedonsat")) event = {CommandType::SetFeedOnSaturday, val};
-    else if (!strcmp(variable, "feedonsun")) event = {CommandType::SetFeedOnSunday, val};
+    else if (!strcmp(variable, "fishfeeder")) event = {CommandType::RunFishFeeder, 1, ""};
+    else if (!strcmp(variable, "feedingintervalenabled")) event = {CommandType::FeedingIntervalEnabled, val, ""};
+    else if (!strcmp(variable, "lightenabled")) event = {CommandType::SetLight, val, ""};
+    else if (!strcmp(variable, "feedinginterval")) event = {CommandType::SetFeedingInterval, val, ""};
+    else if (!strcmp(variable, "feedingtime")) event = {CommandType::SetFeedingTime, val, ""};
+    else if (!strcmp(variable, "autolight")) event = {CommandType::SetAutomaticLight, val, ""};
+    else if (!strcmp(variable, "savefeedersettings")) event = {CommandType::SaveFeederSettings, 1, ""};
+    else if (!strcmp(variable, "savefeedercalendar")) event = {CommandType::SaveFeederCalendar, 1, ""};
+    else if (!strcmp(variable, "feedercalendarenable")) event = {CommandType::SetFeederCalendarEnabled, val}, "";
+    else if (!strcmp(variable, "firstfeed")) event = {CommandType::SetFirstFeed, 0, value};
+    else if (!strcmp(variable, "secondfeed")) event = {CommandType::SetSecondFeed, 0, value};
+    else if (!strcmp(variable, "thirdfeed")) event = {CommandType::SetThirdFeed, 0, value};
+    else if (!strcmp(variable, "fourthfeed")) event = {CommandType::SetFourthFeed, 0, value};
+    else if (!strcmp(variable, "feedonmon")) event = {CommandType::SetFeedOnMonday, val, ""};
+    else if (!strcmp(variable, "feedontue")) event = {CommandType::SetFeedOnTuesday, val, ""};
+    else if (!strcmp(variable, "feedonwed")) event = {CommandType::SetFeedOnWednesday, val, ""};
+    else if (!strcmp(variable, "feedonthu")) event = {CommandType::SetFeedOnThursday, val, ""};
+    else if (!strcmp(variable, "feedonfri")) event = {CommandType::SetFeedOnFriday, val, ""};
+    else if (!strcmp(variable, "feedonsat")) event = {CommandType::SetFeedOnSaturday, val, ""};
+    else if (!strcmp(variable, "feedonsun")) event = {CommandType::SetFeedOnSunday, val, ""};
     else res = -1;
 
-    feederCheckCommand();
+    feederCheckCommand(event);
 
     if(res){
         return httpd_resp_send_500(req);
