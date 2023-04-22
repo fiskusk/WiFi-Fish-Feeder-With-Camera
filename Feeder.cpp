@@ -257,29 +257,45 @@ void Feeder::saveFeederCalendar()
 
 void Feeder::setFirstFeedDateTime(String firstFeed)
 {
-    //unsigned long firstFeedMs = timeHhMmSsToMs(parseTimeString(firstFeed));
-    //unsigned long secondFeedMs = 
-    //if (firstFeedMs > secondFeedDateTime)
-    //    firstFeed = secondFeedDateTime
+    if (firstFeed == "" || firstFeed.length() != 8)
+        return;
     firstFeedingMs = timeHhMmSsToMs(parseTimeString(firstFeed)); 
+    if (firstFeedingMs > secondFeedingMs && feedInterval > 1)
+       firstFeedingMs = secondFeedingMs;
     calculateTimeBetweenFeeding();
 }
 
 void Feeder::setSecondFeedDateTime(String secondFeed)
 {
-    secondFeedingMs = timeHhMmSsToMs(parseTimeString(secondFeed)); 
+    if (secondFeed == "" || secondFeed.length() != 8)
+        return;
+    secondFeedingMs = timeHhMmSsToMs(parseTimeString(secondFeed));
+    if (secondFeedingMs < firstFeedingMs)
+       secondFeedingMs = firstFeedingMs;
+    else if (secondFeedingMs > thirdFeedingMs && feedInterval > 2)
+       secondFeedingMs = thirdFeedingMs;
     calculateTimeBetweenFeeding();
 }
 
 void Feeder::setThirdFeedDateTime(String thirdFeed)
 {
+    if (thirdFeed == "" || thirdFeed.length() != 8)
+        return;
     thirdFeedingMs = timeHhMmSsToMs(parseTimeString(thirdFeed)); 
+    if (thirdFeedingMs < secondFeedingMs)
+       thirdFeedingMs = secondFeedingMs;
+    else if (thirdFeedingMs > fourthFeedingMs && feedInterval > 3)
+       thirdFeedingMs = fourthFeedingMs;
     calculateTimeBetweenFeeding();
 }
 
 void Feeder::setFourthFeedDateTime(String fourthFeed)
 {
-    fourthFeedingMs = timeHhMmSsToMs(parseTimeString(fourthFeed)); 
+    if (fourthFeed == "" || fourthFeed.length() != 8)
+        return;
+    fourthFeedingMs = timeHhMmSsToMs(parseTimeString(fourthFeed));
+    if (fourthFeedingMs < thirdFeedingMs)
+       fourthFeedingMs = thirdFeedingMs;
     calculateTimeBetweenFeeding();
 }
 
@@ -296,11 +312,6 @@ void Feeder::checkFeederTimer(unsigned long time)
         return;
 
     if (time - previousMillis > timeBetweenFeeding ) {
-        Serial.print("time: ");
-        Serial.println(time);
-        Serial.print("previousMillis: ");
-        Serial.println(previousMillis);
-        //previousMillis = millis();
         calculateTimeBetweenFeeding();
 
         if (feedCalendarEnabled) {

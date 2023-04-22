@@ -102,23 +102,23 @@ void feederCheckCommand(command_t event)
             feeder.setAutomaticFeedingLight(event.valueInt);
             break;
         case SetFirstFeed:
-            Serial.print("First feeding time changed to: ");
             feeder.setFirstFeedDateTime(event.valueString);
+            Serial.print("First feeding time changed to: ");
             Serial.println(feeder.getFirstFeedDateTimeString());
             break;
         case SetSecondFeed:
-            Serial.print("Second feeding time changed to: ");
             feeder.setSecondFeedDateTime(event.valueString);
+            Serial.print("Second feeding time changed to: ");
             Serial.println(feeder.getSecondFeedDateTimeString());
             break;
         case SetThirdFeed:
-            Serial.print("Third feeding time changed to: ");
             feeder.setThirdFeedDateTime(event.valueString);
+            Serial.print("Third feeding time changed to: ");
             Serial.println(feeder.getThirdFeedDateTimeString());
             break;
         case SetFourthFeed:
-            Serial.print("Fourth feeding time changed to: ");
             feeder.setFourthFeedDateTime(event.valueString);
+            Serial.print("Fourth feeding time changed to: ");
             Serial.println(feeder.getFourthFeedDateTimeString());
             break;
         case SaveFeederSettings:
