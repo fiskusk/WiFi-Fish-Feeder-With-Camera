@@ -63,10 +63,10 @@ char* feederGetValues(char * p)
     p+=sprintf(p, "\"feedonfri\":%u,", feeder.getFeedingOnFriday() );
     p+=sprintf(p, "\"feedonsat\":%u,", feeder.getFeedingOnSaturday() );
     p+=sprintf(p, "\"feedonsun\":%u,", feeder.getFeedingOnSunday() );
-    p+=sprintf(p, "\"firstfeed\":\"%s\",", feeder.getFirstFeedDateTime() );
-    p+=sprintf(p, "\"secondfeed\":\"%s\",", feeder.getSecondFeedDateTime() );
-    p+=sprintf(p, "\"thirdfeed\":\"%s\",", feeder.getThirdFeedDateTime() );
-    p+=sprintf(p, "\"fourthfeed\":\"%s\"", feeder.getFourthFeedDateTime() );
+    p+=sprintf(p, "\"firstfeed\":\"%s\",", feeder.getFirstFeedDateTimeString() );
+    p+=sprintf(p, "\"secondfeed\":\"%s\",", feeder.getSecondFeedDateTimeString() );
+    p+=sprintf(p, "\"thirdfeed\":\"%s\",", feeder.getThirdFeedDateTimeString() );
+    p+=sprintf(p, "\"fourthfeed\":\"%s\"", feeder.getFourthFeedDateTimeString() );
     return p;
 }
 
@@ -104,22 +104,22 @@ void feederCheckCommand(command_t event)
         case SetFirstFeed:
             Serial.print("First feeding time changed to: ");
             feeder.setFirstFeedDateTime(event.valueString);
-            Serial.println(feeder.getFirstFeedDateTime());
+            Serial.println(feeder.getFirstFeedDateTimeString());
             break;
         case SetSecondFeed:
             Serial.print("Second feeding time changed to: ");
             feeder.setSecondFeedDateTime(event.valueString);
-            Serial.println(feeder.getSecondFeedDateTime());
+            Serial.println(feeder.getSecondFeedDateTimeString());
             break;
         case SetThirdFeed:
             Serial.print("Third feeding time changed to: ");
             feeder.setThirdFeedDateTime(event.valueString);
-            Serial.println(feeder.getThirdFeedDateTime());
+            Serial.println(feeder.getThirdFeedDateTimeString());
             break;
         case SetFourthFeed:
             Serial.print("Fourth feeding time changed to: ");
             feeder.setFourthFeedDateTime(event.valueString);
-            Serial.println(feeder.getFourthFeedDateTime());
+            Serial.println(feeder.getFourthFeedDateTimeString());
             break;
         case SaveFeederSettings:
             feeder.saveDefaults();
@@ -419,7 +419,7 @@ void setup() {
         Serial.println("' to connect");
         led.repeatBlink(50, 1500);
     } else {
-        Serial.println("WiFi not connected. For configure WiFi connection enter \"W\"");
+        Serial.println("WiFi not connected. For configure WiFi connection enter \"W\""); // TODO, vyřešit jak se to bude chovat, když to nebude mít čas z internetu. Možná dodělat nějakej časovej manager přes seriovou linku
         led.repeatBlink(100, 100);
     }
 }

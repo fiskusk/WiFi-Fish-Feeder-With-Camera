@@ -9,10 +9,10 @@ void Feeder::init()
     feedingIntervalEnabled = preferences.getBool("feedIntervalEn", true);
     lightEnabled = preferences.getBool("lightEnabled", false);
     automaticFeedingLight = preferences.getBool("autoFeedLight", true);
-    firstFeedDateTime = preferences.getString("firstFeed", "07:00:00");
-    secondFeedDateTime = preferences.getString("secondFeed", "19:00:00");
-    thirdFeedDateTime = preferences.getString("thirdFeed", "12:00:00");
-    fourthFeedDateTime = preferences.getString("fourthFeed", "17:00:00");
+    firstFeedingMs = timeHhMmSsToMs(parseTimeString(preferences.getString("firstFeed", "07:00:00")));
+    secondFeedingMs = timeHhMmSsToMs(parseTimeString(preferences.getString("secondFeed", "19:00:00")));
+    thirdFeedingMs = timeHhMmSsToMs(parseTimeString(preferences.getString("thirdFeed", "12:00:00")));
+    fourthFeedingMs = timeHhMmSsToMs(parseTimeString(preferences.getString("fourthFeed", "17:00:00")));
     preferences.end();
 
     feederCalendar.begin("feederCalendar", false);
@@ -54,9 +54,7 @@ void Feeder::calculateTimeBetweenFeeding()
     }
     previousMillis = millis()-10;
     unsigned long timeNowMs = timeHhMmSsToMs(timeNow);
-    struct tm  firstFeeding = parseTimeString(firstFeedDateTime);
-    unsigned long firstFeedingMs = timeHhMmSsToMs(firstFeeding);
-    
+    // TODO check first < second < third < fourth!!! 
     if (feedInterval == 1) {
         if (timeNowMs < firstFeedingMs) {
             Serial.println("This will be the first feeding of the day");
@@ -68,9 +66,6 @@ void Feeder::calculateTimeBetweenFeeding()
         }
     }
     else if (feedInterval == 2) {
-        struct tm secondFeeding = parseTimeString(secondFeedDateTime);
-        unsigned long secondFeedingMs = timeHhMmSsToMs(secondFeeding);
-
         if (timeNowMs < firstFeedingMs) {
             Serial.println("This will be the first feeding of the day");
             timeBetweenFeeding = firstFeedingMs - timeNowMs;
@@ -85,12 +80,6 @@ void Feeder::calculateTimeBetweenFeeding()
         }
     }
     else if (feedInterval == 3) {
-        struct tm secondFeeding = parseTimeString(secondFeedDateTime);
-        struct tm thirdFeeding = parseTimeString(thirdFeedDateTime);
-
-        unsigned long secondFeedingMs = timeHhMmSsToMs(secondFeeding);
-        unsigned long thirdFeedingMs = timeHhMmSsToMs(thirdFeeding);
-
         if (timeNowMs < firstFeedingMs && timeNowMs < secondFeedingMs && timeNowMs < thirdFeedingMs) {
             Serial.println("This will be the first feeding of the day");
             timeBetweenFeeding = firstFeedingMs - timeNowMs;
@@ -109,14 +98,6 @@ void Feeder::calculateTimeBetweenFeeding()
         }
     }
     else if (feedInterval == 4) {
-        struct tm secondFeeding = parseTimeString(secondFeedDateTime);
-        struct tm thirdFeeding = parseTimeString(thirdFeedDateTime);
-        struct tm fourthFeeding = parseTimeString(fourthFeedDateTime);
-
-        unsigned long secondFeedingMs = timeHhMmSsToMs(secondFeeding);
-        unsigned long thirdFeedingMs = timeHhMmSsToMs(thirdFeeding);
-        unsigned long fourthFeedingMs = timeHhMmSsToMs(fourthFeeding);
-
         if (timeNowMs < firstFeedingMs && timeNowMs < secondFeedingMs && timeNowMs < thirdFeedingMs && timeNowMs < fourthFeedingMs) {
             Serial.println("This will be the first feeding of the day");
             timeBetweenFeeding = firstFeedingMs - timeNowMs;
@@ -166,15 +147,37 @@ tm Feeder::parseTimeString(String string)
     token = strtok(NULL, ":");
     time.tm_sec = atoi(token);
 
-    Serial.print("Parsed string: ");
-    Serial.println(&time, "%H:%M:%S");
-
     return time;
 }
 
 unsigned long Feeder::timeHhMmSsToMs(tm time)
 {
-    return time.tm_hour*60UL*60*1000UL + time.tm_min*60UL*1000UL + time.tm_sec*1000UL;
+    return time.tm_hour*60UL*60UL*1000UL + time.tm_min*60UL*1000UL + time.tm_sec*1000UL;
+}
+
+String Feeder::msToTimeHhMmSs(unsigned long timeMs)
+{
+    uint8_t hour = timeMs/(1000UL*60UL*60UL);
+    timeMs -= hour * (1000UL * 60UL * 60UL);
+    uint8_t min = timeMs / (1000UL * 60UL);
+    timeMs -= min * (1000UL * 60UL);
+    uint8_t sec = timeMs / 1000;
+    timeMs -= sec * 1000;
+
+    if (hour >= 24)
+        hour = 23;
+    if (min >= 60)
+        min = 59;
+    if (sec >= 60)
+        sec = 59;
+
+    if (timeMs != 0)
+        Serial.println("When convert time in ms to string format hh:mm:ss some milliseconds remaining - INCORECT");
+
+    char buffer[9];
+    sprintf(buffer, "%02d:%02d:%02d", hour, min, sec);
+
+    return buffer;
 }
 
 void Feeder::saveDefaults()
@@ -186,10 +189,10 @@ void Feeder::saveDefaults()
     preferences.putBool("feedIntervalEn", feedingIntervalEnabled);
     preferences.putBool("lightEnabled", lightEnabled);
     preferences.putBool("autoFeedLight", automaticFeedingLight);
-    preferences.putString("firstFeed", firstFeedDateTime);
-    preferences.putString("secondFeed", secondFeedDateTime);
-    preferences.putString("thirdFeed", thirdFeedDateTime);
-    preferences.putString("fourthFeed", fourthFeedDateTime);
+    preferences.putString("firstFeed", msToTimeHhMmSs(firstFeedingMs));
+    preferences.putString("secondFeed", msToTimeHhMmSs(secondFeedingMs));
+    preferences.putString("thirdFeed", msToTimeHhMmSs(thirdFeedingMs));
+    preferences.putString("fourthFeed", msToTimeHhMmSs(fourthFeedingMs));
 
     Serial.print("Stored feedInterval: ");
     Serial.println(preferences.getUShort("feedInterval") );
@@ -249,6 +252,35 @@ void Feeder::saveFeederCalendar()
     Serial.println("Current feeding calendar stored");
 
     feederCalendar.end();
+}
+
+
+void Feeder::setFirstFeedDateTime(String firstFeed)
+{
+    //unsigned long firstFeedMs = timeHhMmSsToMs(parseTimeString(firstFeed));
+    //unsigned long secondFeedMs = 
+    //if (firstFeedMs > secondFeedDateTime)
+    //    firstFeed = secondFeedDateTime
+    firstFeedingMs = timeHhMmSsToMs(parseTimeString(firstFeed)); 
+    calculateTimeBetweenFeeding();
+}
+
+void Feeder::setSecondFeedDateTime(String secondFeed)
+{
+    secondFeedingMs = timeHhMmSsToMs(parseTimeString(secondFeed)); 
+    calculateTimeBetweenFeeding();
+}
+
+void Feeder::setThirdFeedDateTime(String thirdFeed)
+{
+    thirdFeedingMs = timeHhMmSsToMs(parseTimeString(thirdFeed)); 
+    calculateTimeBetweenFeeding();
+}
+
+void Feeder::setFourthFeedDateTime(String fourthFeed)
+{
+    fourthFeedingMs = timeHhMmSsToMs(parseTimeString(fourthFeed)); 
+    calculateTimeBetweenFeeding();
 }
 
 char* Feeder::getLastFeedingTime()

@@ -23,15 +23,15 @@ public:
     void setAutomaticFeedingLight(bool enabled) { automaticFeedingLight = enabled; }
     void setLightEnabled(bool enabled);
 
-    void setFirstFeedDateTime(String firstFeed) { firstFeedDateTime = firstFeed; calculateTimeBetweenFeeding(); }
-    void setSecondFeedDateTime(String secondFeed) { secondFeedDateTime = secondFeed; calculateTimeBetweenFeeding(); }
-    void setThirdFeedDateTime(String thirdFeed) { thirdFeedDateTime = thirdFeed; calculateTimeBetweenFeeding(); }
-    void setFourthFeedDateTime(String fourthFeed) { fourthFeedDateTime = fourthFeed; calculateTimeBetweenFeeding(); }
+    void setFirstFeedDateTime(String firstFeed);
+    void setSecondFeedDateTime(String secondFeed);
+    void setThirdFeedDateTime(String thirdFeed);
+    void setFourthFeedDateTime(String fourthFeed);
 
-    String getFirstFeedDateTime() { return firstFeedDateTime; };
-    String getSecondFeedDateTime() { return secondFeedDateTime; };
-    String getThirdFeedDateTime() { return thirdFeedDateTime; };
-    String getFourthFeedDateTime() { return fourthFeedDateTime; };
+    String getFirstFeedDateTimeString() { return msToTimeHhMmSs(firstFeedingMs); };
+    String getSecondFeedDateTimeString() { return msToTimeHhMmSs(secondFeedingMs); };
+    String getThirdFeedDateTimeString() { return msToTimeHhMmSs(thirdFeedingMs); };
+    String getFourthFeedDateTimeString() { return msToTimeHhMmSs(fourthFeedingMs); };
 
     bool getAutomaticFeedingLight() { return automaticFeedingLight; }
     bool getLightEnabled() { return lightEnabled; }
@@ -67,6 +67,7 @@ private:
     void calculateTimeBetweenFeeding();
     tm parseTimeString(String string);
     unsigned long timeHhMmSsToMs(tm time);
+    String msToTimeHhMmSs(unsigned long timeMs);
 
 private:
     Preferences preferences;
@@ -94,9 +95,9 @@ private:
     bool feedOnSaturday;
     bool feedOnSunday;
 
-    String firstFeedDateTime;
-    String secondFeedDateTime;
-    String thirdFeedDateTime;
-    String fourthFeedDateTime;
+    unsigned long firstFeedingMs;
+    unsigned long secondFeedingMs;
+    unsigned long thirdFeedingMs;
+    unsigned long fourthFeedingMs;
 
 };
