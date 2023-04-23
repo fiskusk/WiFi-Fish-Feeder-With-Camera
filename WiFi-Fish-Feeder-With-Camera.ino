@@ -364,19 +364,24 @@ void unknownCommand(String received)
 
 void checkSerialCommand(String received)
 {
-    if (received == "W") {
-        Serial.println("Press \"N\" for enter new creditials; \"S\" for scan WiFi Networks; \"R\" for reboot");
+    if (received == "W\n") {
+        Serial.println("Press \"N\" for enter new creditials; \"S\" for scan WiFi Networks");
         while (Serial.available() == false) { esp_task_wdt_reset();}
         received = Serial.readString();
-        if (received == "N")
+        if (received == "N\n")
             commandNewCreditials();
-        else if (received == "S")
+        else if (received == "S\n")
             scanWifi();
-        else if (received == "R")
-            ESP.restart();
         else 
             unknownCommand(received);
-    } else {
+    } 
+    else if (received == "R\n") {
+        ESP.restart();
+    }
+    else if (received == "\n" ) {
+        Serial.println("For configure WiFi connection enter \"W\"; For ESP restart enter \"R\"");
+    }
+    else {
         unknownCommand(received);
     }
 }
