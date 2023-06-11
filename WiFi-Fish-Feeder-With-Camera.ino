@@ -266,9 +266,14 @@ bool wifiInit(unsigned long connectingStartingTime, uint32_t timeoutMs = 10000)
 {
     creditials.begin("creditials", true);
     
-    WiFi.begin(const_cast<char*>(creditials.getString("ssid").c_str()), 
+    wl_status_t wifiStatus = WiFi.begin(const_cast<char*>(creditials.getString("ssid").c_str()), 
                const_cast<char*>(creditials.getString("password").c_str()));
     creditials.end();
+
+    if (wifiStatus == WL_NO_SSID_AVAIL) {
+        Serial.print("No SSID");
+        return false;
+    }
     Serial.print("Connecting to WiFi");
 
     while (WiFi.status() != WL_CONNECTED && millis() < connectingStartingTime + timeoutMs) {
