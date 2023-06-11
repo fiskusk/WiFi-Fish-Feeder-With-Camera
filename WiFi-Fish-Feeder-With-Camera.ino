@@ -304,6 +304,19 @@ void timeInit(int maxTryNr = 5)
     Serial.println(&timeinfo, "%A, %d.%B %Y %H:%M:%S");
 }
 
+String removeSpecialCharacters(String s)
+{
+    for (int i = 0; i < s.length(); i++) {
+        if (s[i] < 32 || s[i] > 126) {
+            // erase function to erase
+            // the character
+            s.remove(i);
+            i--;
+        }
+    }
+    return s;
+}
+
 void commandNewCreditials()
 {
     String received;
@@ -312,6 +325,7 @@ void commandNewCreditials()
     Serial.println("Enter new WiFi SSID:");
     while (Serial.available() == false) { esp_task_wdt_reset();}
     received = Serial.readString();
+    received = removeSpecialCharacters(received);
     creditials.putString("ssid", received);
 
     Serial.print("Enter new WiFi Password for \"");
@@ -319,6 +333,7 @@ void commandNewCreditials()
     Serial.println("\":");
     while (Serial.available() == false) { esp_task_wdt_reset();}
     received = Serial.readString();
+    received = removeSpecialCharacters(received);
     creditials.putString("password", received);
 
     creditials.end();
