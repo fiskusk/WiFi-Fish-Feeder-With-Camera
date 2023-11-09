@@ -327,12 +327,14 @@ void checkWifiStateAndReconnectItIfDown(unsigned long currentMillis, uint32_t in
         wifiConnected = true;
         // Init and get the time
         Serial.println("Get new time info...");
-        // TODO check if time is get succesfully
         timeObtained = timeInit();
         // start camera server
         startCameraServer();
-        // calculate new values for feeding
-        feeder.calculateTimeBetweenFeeding();
+        if (timeObtained == true)
+        {
+            // calculate new values for feeding only if Time is valid
+            feeder.calculateTimeBetweenFeeding();
+        }
     }
     if (WiFi.status() == WL_CONNECTED && timeObtained == false && (currentMillis - obtainLocalTimeStartTime >= interval))
     {
