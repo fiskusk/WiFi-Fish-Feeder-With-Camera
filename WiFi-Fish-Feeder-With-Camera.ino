@@ -32,6 +32,7 @@ const long  gmtOffset_sec = 0; // 1 * 60 * 60;
 const int   daylightOffset_sec = 0; // 3600;
 
 bool wifiConnected = false;
+bool timeObtained = false;
 
 bool printLocalTime()
 {
@@ -293,23 +294,25 @@ bool wifiInit(unsigned long connectingStartingTime, uint32_t timeoutMs = 10000)
     return false;
 }
 
-void timeInit(int maxTryNr = 5)
+bool timeInit(int maxTryNr = 5)
 {
     configTime(gmtOffset_sec, daylightOffset_sec, ntpServer);
     setenv("TZ","CET-1CEST,M3.5.0,M10.5.0/3",1);
     tzset();
     for (int tryNr = 0; tryNr < maxTryNr; tryNr++) {
-        if (printLocalTime());
-            return;
+        if (printLocalTime())
+            return true;
     }
     Serial.println("The maximum number of attempts has been reached");
     struct tm timeinfo;
     Serial.println(&timeinfo, "%A, %d.%B %Y %H:%M:%S");
+    return false;
 }
 
 void checkWifiStateAndReconnectItIfDown(unsigned long currentMillis, uint32_t interval = 10000)
 {
     static volatile unsigned long wifiReconnectionStartTime = 0;
+    static volatile unsigned long obtainLocalTimeStartTime = 0;
     // if WiFi is down, try reconnecting
     if ((WiFi.status() != WL_CONNECTED) && (currentMillis - wifiReconnectionStartTime >= interval))
     {
@@ -324,11 +327,22 @@ void checkWifiStateAndReconnectItIfDown(unsigned long currentMillis, uint32_t in
         wifiConnected = true;
         // Init and get the time
         Serial.println("Get new time info...");
-        timeInit();
+        // TODO check if time is get succesfully
+        timeObtained = timeInit();
         // start camera server
         startCameraServer();
         // calculate new values for feeding
         feeder.calculateTimeBetweenFeeding();
+    }
+    if (WiFi.status() == WL_CONNECTED && timeObtained == false && (currentMillis - obtainLocalTimeStartTime >= interval))
+    {
+        timeObtained = printLocalTime();
+        if (timeObtained == true)
+        {
+            // calculate new values for feeding
+            feeder.calculateTimeBetweenFeeding();
+        }
+        obtainLocalTimeStartTime = currentMillis;
     }
 }
 
@@ -448,7 +462,7 @@ void setup() {
 
     if (wifiConnected) {
         // Init and get the time
-        timeInit();
+        timeObtained = timeInit();
         // start camera server
         startCameraServer();
     }
