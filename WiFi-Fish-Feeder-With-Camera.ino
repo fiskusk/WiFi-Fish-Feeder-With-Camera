@@ -32,8 +32,6 @@ const long  gmtOffset_sec = 0; // 1 * 60 * 60;
 const int   daylightOffset_sec = 0; // 3600;
 
 bool wifiConnected = false;
-unsigned long wifiReconnectionStartTime = 0;
-const uint32_t wifiReconnectionDelay = 10000;
 
 bool printLocalTime()
 {
@@ -309,6 +307,31 @@ void timeInit(int maxTryNr = 5)
     Serial.println(&timeinfo, "%A, %d.%B %Y %H:%M:%S");
 }
 
+void checkWifiStateAndReconnectItIfDown(unsigned long currentMillis, uint32_t interval = 10000)
+{
+    static volatile unsigned long wifiReconnectionStartTime = 0;
+    // if WiFi is down, try reconnecting
+    if ((WiFi.status() != WL_CONNECTED) && (currentMillis - wifiReconnectionStartTime >= interval))
+    {
+        wifiConnected = false;
+        Serial.println("Reconnecting to WiFi...");
+        WiFi.disconnect();
+        WiFi.reconnect();
+        wifiReconnectionStartTime = currentMillis;
+    }
+    if (WiFi.status() == WL_CONNECTED && wifiConnected == false)
+    {
+        wifiConnected = true;
+        // Init and get the time
+        Serial.println("Get new time info...");
+        timeInit();
+        // start camera server
+        startCameraServer();
+        // calculate new values for feeding
+        feeder.calculateTimeBetweenFeeding();
+    }
+}
+
 String removeSpecialCharacters(String s)
 {
     for (int i = 0; i < s.length(); i++) {
@@ -455,6 +478,8 @@ void loop() {
     led.process(time);
     feeder.process(time);
     esp_task_wdt_reset();
+    // if WiFi is down, try reconnecting
+    checkWifiStateAndReconnectItIfDown(time);
 
     if (Serial.available() == true)
         checkSerialCommand(Serial.readString());

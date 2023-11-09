@@ -16,6 +16,7 @@ public:
     void startFeeding(unsigned long time);
     void saveDefaults();
     void saveFeederCalendar();
+    void calculateTimeBetweenFeeding();
 
     void setFeedingIntervalEnabled(bool enabled) { feedingIntervalEnabled = enabled; }
     void setFeedInterval(uint8_t interval) { feedInterval = interval; }
@@ -64,7 +65,6 @@ private:
     void feedingAnalogWrite(uint8_t channel, uint32_t value, uint32_t valueMax = 180);
     void runFeeder(unsigned long time);
     void checkFeederTimer(unsigned long time);
-    void calculateTimeBetweenFeeding();
     tm parseTimeString(String string);
     unsigned long timeHhMmSsToMs(tm time);
     String msToTimeHhMmSs(unsigned long timeMs);

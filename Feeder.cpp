@@ -52,7 +52,7 @@ void Feeder::calculateTimeBetweenFeeding()
     if(!getLocalTime(&timeNow, 10)){
       Serial.println("Failed to obtain time");
     }
-    previousMillis = millis()-10;
+    previousMillis = millis() - 1;
     unsigned long timeNowMs = timeHhMmSsToMs(timeNow);
     // TODO check first < second < third < fourth!!! 
     if (feedInterval == 1) {
