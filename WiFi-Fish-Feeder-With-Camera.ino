@@ -300,12 +300,11 @@ bool timeInit(int maxTryNr = 5)
     setenv("TZ","CET-1CEST,M3.5.0,M10.5.0/3",1);
     tzset();
     for (int tryNr = 0; tryNr < maxTryNr; tryNr++) {
+        esp_task_wdt_reset();
         if (printLocalTime())
             return true;
     }
-    Serial.println("The maximum number of attempts has been reached");
-    struct tm timeinfo;
-    Serial.println(&timeinfo, "%A, %d.%B %Y %H:%M:%S");
+    Serial.println("The maximum number of attempts to get time has been reached");
     return false;
 }
 
@@ -317,11 +316,13 @@ void checkWifiStateAndReconnectItIfDown(unsigned long currentMillis, uint32_t in
     if ((WiFi.status() != WL_CONNECTED) && (currentMillis - wifiReconnectionStartTime >= interval))
     {
         wifiConnected = false;
+        led.repeatBlink(100, 100);
         Serial.println("Reconnecting to WiFi...");
         WiFi.disconnect();
         WiFi.reconnect();
         wifiReconnectionStartTime = currentMillis;
     }
+    // WiFi connected, check time and if is correct calculate new feeding times
     if (WiFi.status() == WL_CONNECTED && wifiConnected == false)
     {
         wifiConnected = true;
@@ -334,8 +335,10 @@ void checkWifiStateAndReconnectItIfDown(unsigned long currentMillis, uint32_t in
         {
             // calculate new values for feeding only if Time is valid
             feeder.calculateTimeBetweenFeeding();
+            led.repeatBlink(50, 1500);
         }
     }
+    // WiFi connected, but time failed to obtain from NTP
     if (WiFi.status() == WL_CONNECTED && timeObtained == false && (currentMillis - obtainLocalTimeStartTime >= interval))
     {
         timeObtained = printLocalTime();
@@ -343,6 +346,11 @@ void checkWifiStateAndReconnectItIfDown(unsigned long currentMillis, uint32_t in
         {
             // calculate new values for feeding
             feeder.calculateTimeBetweenFeeding();
+            led.repeatBlink(50, 1500);
+        }
+        else
+        {
+            led.repeatBlink(100, 100);
         }
         obtainLocalTimeStartTime = currentMillis;
     }
@@ -477,7 +485,7 @@ void setup() {
     esp_task_wdt_add(NULL); //add current thread to WDT watch
 
     // Print welcome info
-    if (wifiConnected) {
+    if (wifiConnected && timeObtained) {
         Serial.print("Feeder Ready! Use 'http://");
         Serial.print(WiFi.localIP());
         Serial.println("' to connect");
