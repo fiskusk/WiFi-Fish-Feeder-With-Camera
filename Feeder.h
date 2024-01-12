@@ -19,7 +19,7 @@ public:
     void calculateTimeBetweenFeeding();
 
     void setFeedingIntervalEnabled(bool enabled) { feedingIntervalEnabled = enabled; }
-    void setFeedInterval(uint8_t interval) { feedInterval = interval; }
+    void setFeedInterval(uint8_t interval) { feedInterval = interval; calculateTimeBetweenFeeding(); }
     void setFeedingTime(unsigned long time) {feedingTime = time; }
     void setAutomaticFeedingLight(bool enabled) { automaticFeedingLight = enabled; }
     void setLightEnabled(bool enabled);
@@ -41,14 +41,14 @@ public:
     unsigned long getFeedingTime() { return feedingTime; }
     char* getLastFeedingTime();
 
-    void setFeedingCalendarEnabled(bool enabled) { feedCalendarEnabled = enabled; }
-    void setFeedingOnMonday(bool enabled) { feedOnMonday = enabled; }
-    void setFeedingOnTuesday(bool enabled) { feedOnTuesday = enabled; }
-    void setFeedingOnWednesday(bool enabled) { feedOnWednesday = enabled; }
-    void setFeedingOnThursday(bool enabled) { feedOnThursday = enabled; }
-    void setFeedingOnFriday(bool enabled) { feedOnFriday = enabled; }
-    void setFeedingOnSaturday(bool enabled) { feedOnSaturday = enabled; }
-    void setFeedingOnSunday(bool enabled) { feedOnSunday = enabled; }
+    void setFeedingCalendarEnabled(bool enabled) { feedCalendarEnabled = enabled; calculateTimeBetweenFeeding(); }
+    void setFeedingOnMonday(bool enabled) { feedOnMonday = enabled; calculateTimeBetweenFeeding(); }
+    void setFeedingOnTuesday(bool enabled) { feedOnTuesday = enabled; calculateTimeBetweenFeeding(); }
+    void setFeedingOnWednesday(bool enabled) { feedOnWednesday = enabled; calculateTimeBetweenFeeding(); }
+    void setFeedingOnThursday(bool enabled) { feedOnThursday = enabled; calculateTimeBetweenFeeding(); }
+    void setFeedingOnFriday(bool enabled) { feedOnFriday = enabled; calculateTimeBetweenFeeding(); }
+    void setFeedingOnSaturday(bool enabled) { feedOnSaturday = enabled; calculateTimeBetweenFeeding(); }
+    void setFeedingOnSunday(bool enabled) { feedOnSunday = enabled; calculateTimeBetweenFeeding(); }
 
     bool getFeedingCalendarEnabled() { return feedCalendarEnabled; }
     bool getFeedingOnMonday() { return feedOnMonday; }
